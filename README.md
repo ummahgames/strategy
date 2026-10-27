@@ -6,21 +6,21 @@ Tactics, defense, expeditions, resource choices, and team planning.
 
 | Game | Folder | Public route |
 | --- | --- | --- |
-| [Bannerfield](bannerfield/index.html) | [bannerfield/](bannerfield/README.md) | /bannerfield/ |
-| [Caravan Breakthrough](caravan-breakthrough/index.html) | [caravan-breakthrough/](caravan-breakthrough/README.md) | /caravan-breakthrough/ |
-| [Clockwork Champions](clockwork-champions/index.html) | [clockwork-champions/](clockwork-champions/README.md) | /clockwork-champions/ |
-| [Companions of the Grove](companions-of-the-grove/index.html) | [companions-of-the-grove/](companions-of-the-grove/README.md) | /companions-of-the-grove/ |
-| [Constellation Switchyard](constellation-switchyard/index.html) | [constellation-switchyard/](constellation-switchyard/README.md) | /constellation-switchyard/ |
-| [Forecast Fighters](forecast-fighters/index.html) | [forecast-fighters/](forecast-fighters/README.md) | /forecast-fighters/ |
-| [Garden Guilds](garden-guilds/index.html) | [garden-guilds/](garden-guilds/README.md) | /garden-guilds/ |
-| [Harbor Hide-and-Seek](harbor-hide-and-seek/index.html) | [harbor-hide-and-seek/](harbor-hide-and-seek/README.md) | /harbor-hide-and-seek/ |
-| [Lantern Company](lantern-company/index.html) | [lantern-company/](lantern-company/README.md) | /lantern-company/ |
-| [Oasis Council](oasis-council/index.html) | [oasis-council/](oasis-council/README.md) | /oasis-council/ |
-| [One Small Island](one-small-island/index.html) | [one-small-island/](one-small-island/README.md) | /one-small-island/ |
-| [Orchard Guardians](orchard-guardians/index.html) | [orchard-guardians/](orchard-guardians/README.md) | /orchard-guardians/ |
-| [The Moving Castle](the-moving-castle/index.html) | [the-moving-castle/](the-moving-castle/README.md) | /the-moving-castle/ |
-| [The Neighborhood Feast](the-neighborhood-feast/index.html) | [the-neighborhood-feast/](the-neighborhood-feast/README.md) | /the-neighborhood-feast/ |
-| [Tiny Siege Workshop](tiny-siege-workshop/index.html) | [tiny-siege-workshop/](tiny-siege-workshop/README.md) | /tiny-siege-workshop/ |
+| [Bannerfield](bannerfield/index.html) | [bannerfield/](bannerfield/README.md) | /strategy/bannerfield/ |
+| [Caravan Breakthrough](caravan-breakthrough/index.html) | [caravan-breakthrough/](caravan-breakthrough/README.md) | /strategy/caravan-breakthrough/ |
+| [Clockwork Champions](clockwork-champions/index.html) | [clockwork-champions/](clockwork-champions/README.md) | /strategy/clockwork-champions/ |
+| [Companions of the Grove](companions-of-the-grove/index.html) | [companions-of-the-grove/](companions-of-the-grove/README.md) | /strategy/companions-of-the-grove/ |
+| [Constellation Switchyard](constellation-switchyard/index.html) | [constellation-switchyard/](constellation-switchyard/README.md) | /strategy/constellation-switchyard/ |
+| [Forecast Fighters](forecast-fighters/index.html) | [forecast-fighters/](forecast-fighters/README.md) | /strategy/forecast-fighters/ |
+| [Garden Guilds](garden-guilds/index.html) | [garden-guilds/](garden-guilds/README.md) | /strategy/garden-guilds/ |
+| [Harbor Hide-and-Seek](harbor-hide-and-seek/index.html) | [harbor-hide-and-seek/](harbor-hide-and-seek/README.md) | /strategy/harbor-hide-and-seek/ |
+| [Lantern Company](lantern-company/index.html) | [lantern-company/](lantern-company/README.md) | /strategy/lantern-company/ |
+| [Oasis Council](oasis-council/index.html) | [oasis-council/](oasis-council/README.md) | /strategy/oasis-council/ |
+| [One Small Island](one-small-island/index.html) | [one-small-island/](one-small-island/README.md) | /strategy/one-small-island/ |
+| [Orchard Guardians](orchard-guardians/index.html) | [orchard-guardians/](orchard-guardians/README.md) | /strategy/orchard-guardians/ |
+| [The Moving Castle](the-moving-castle/index.html) | [the-moving-castle/](the-moving-castle/README.md) | /strategy/the-moving-castle/ |
+| [The Neighborhood Feast](the-neighborhood-feast/index.html) | [the-neighborhood-feast/](the-neighborhood-feast/README.md) | /strategy/the-neighborhood-feast/ |
+| [Tiny Siege Workshop](tiny-siege-workshop/index.html) | [tiny-siege-workshop/](tiny-siege-workshop/README.md) | /strategy/tiny-siege-workshop/ |
 
 ## Hosting
 
