@@ -1,8 +1,8 @@
 (function(root){
 'use strict';
-const {HEROES,createCampaign,startBattle,enterCamp}=root.EmberEngine;
+const {HEROES,ITEMS,createCampaign,startBattle,enterCamp}=root.EmberEngine;
 
-const SAVE_KEY = 'ember-company-v1';
+const SAVE_KEY = root.EmberConfig?.storageKey||'ember-company-v1';
 const integer = (value, min, max = Number.MAX_SAFE_INTEGER - 2) =>
   Number.isSafeInteger(value) && value >= min && value <= max;
 const copy = value => JSON.parse(JSON.stringify(value));
@@ -16,15 +16,16 @@ function campaignSave(campaign) {
     enterCamp(c);
   }
   return {
-    version: 2,
+    version: 3,
     battle: c.battle,
-    gold: c.gold,
+    gold: c.mode === 'camp' ? c.gold : c.startingGold ?? c.gold,
     potions: c.mode === 'camp' ? c.potions : c.startingPotions ?? c.potions,
     wins: c.wins,
     mode: c.mode === 'camp' ? 'camp' : 'battle',
+    inventory: copy(c.mode === 'camp' ? c.inventory ?? [] : c.startingInventory ?? c.inventory ?? []),
     heroes: c.heroes.map(h => Object.fromEntries([
       'id', 'hp', 'mp', 'maxHp', 'maxMp', 'atk', 'def', 'speed', 'move',
-      'range', 'level', 'xp', 'tier', 'promoted'
+      'range', 'level', 'xp', 'tier', 'promoted', 'unlocked', 'equippedWeapon', 'equippedRelic'
     ].map(key => [key, h[key]])))
   };
 }
@@ -33,13 +34,17 @@ function restoreCampaign(raw) {
   try {
     if (typeof raw !== 'string' || raw.length > 100_000) return null;
     const data = JSON.parse(raw);
-    if (!data || ![1, 2].includes(data.version) || !integer(data.battle, 0) ||
+    if (!data || ![1, 2, 3].includes(data.version) || !integer(data.battle, 0) ||
         !integer(data.gold, 0) || !integer(data.potions, 0) ||
         !integer(data.wins ?? 0, 0) || !Array.isArray(data.heroes) ||
         data.heroes.length !== HEROES.length) return null;
     const ids = data.heroes.map(h => h?.id);
     if (new Set(ids).size !== HEROES.length ||
         !HEROES.every(h => ids.includes(h.id))) return null;
+    const inventory=data.inventory??[];
+    if(!Array.isArray(inventory)||inventory.length>64||inventory.some(item=>
+      !item||typeof item.uid!=='string'||!/^[-a-zA-Z0-9]{1,72}$/.test(item.uid)||!['weapon','relic'].includes(ITEMS[item.type]?.kind))||
+      new Set(inventory.map(item=>item.uid)).size!==inventory.length)return null;
     const defaults = createCampaign();
     const heroes = defaults.heroes.map(base => {
       const saved = data.heroes.find(h => h.id === base.id);
@@ -58,9 +63,18 @@ function restoreCampaign(raw) {
           (saved.promoted !== undefined && typeof saved.promoted !== 'boolean'))
         throw new Error('Invalid vitals');
       h.promoted = saved.promoted ?? false;
+      if(data.version===3&&typeof saved.unlocked!=='boolean')throw new Error('Invalid recruit state');
+      h.unlocked=data.version<3?true:saved.unlocked;
+      for(const [slot,kind] of [['equippedWeapon','weapon'],['equippedRelic','relic']]){
+        const uid=saved[slot]??null;
+        if(uid!==null&&!inventory.some(item=>item.uid===uid&&ITEMS[item.type].kind===kind))throw new Error('Invalid equipment');
+        h[slot]=uid;
+      }
       return h;
     });
-    const c = { ...defaults, heroes, battle: data.battle, gold: data.gold,
+    const equipped=heroes.flatMap(h=>[h.equippedWeapon,h.equippedRelic]).filter(Boolean);
+    if(!heroes.some(h=>h.unlocked)||new Set(equipped).size!==equipped.length)return null;
+    const c = { ...defaults, heroes, inventory:inventory.map(item=>({uid:item.uid,type:item.type})), battle: data.battle, gold: data.gold,
       potions: data.potions, wins: data.wins ?? 0 };
     // Migrate old full-state saves without applying camp recovery twice.
     if (data.mode === 'victory') { c.mode = 'victory'; enterCamp(c); }

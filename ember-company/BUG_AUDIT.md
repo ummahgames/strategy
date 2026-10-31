@@ -1,4 +1,4 @@
-# Ember Company bug audit
+# Saffron Vanguard bug audit
 
 Audit date: October 31, 2026. Scope: local HTML/CSS/JavaScript game only. No source upload or deployment was performed during this audit.
 
@@ -63,3 +63,27 @@ Movement now traverses the actual weighted route one tile at a time. Enemy decis
 The Deliberate default uses 220 ms per tile, a 1.4 second attack, a 650 ms recovery hold, and an 850 ms enemy decision pause. Standard and Quick scale these durations. Sword slashes/lunges, arrows, magic bolts, fire bursts, healing, rally, and guard have distinct effects. Reduced-motion preferences remove walking bounce, lunges, and hit shake.
 
 New automated checks cover route legality, interpolation without diagonal shortcuts, pause-aware time progression, pace settings, nonmutating enemy plans, action effect selection, and loading the dependencies as classic scripts. Browser checks verified animated walking, input locks, guarded actions, handoff to the next hero, and enemy walking without console errors. Direct file navigation is blocked by the browser automation policy, so disk loading was checked through classic-script execution and dependency ordering rather than a browser file-URL visit.
+
+
+## Detailed character art update
+
+Character rendering now uses original 32 × 40 pixel battlefield sprites and separate 64 × 64 portraits. Armor, cloth, skin, hair, weapons, shields, promotion trim, and weapon-tier accents have dedicated shading. Sprite and portrait canvases are cached per visual variant so animations reuse the painted images. Dependency ordering includes `characters.js` for both direct file loading and static preview.
+
+The browser preview verified all six heroes, battlefield readability, the enlarged dossier portrait, the restored stylesheet, and no horizontal overflow at the inspected desktop size. No console warnings or errors were reported. The existing 36 checks still pass.
+
+
+## Recruitment, drops, and WebGL edition
+
+New campaigns now start with Amira and Ayesha against two enemies with lower HP and attack. Free recruitment milestones follow encounters 2, 4, 6, and 8; early camp hiring has explicit victory requirements and gold costs. Recruits catch up to the company's level. Locked heroes do not enter battle or gain XP. Save version 3 preserves recruit flags and equipment ownership, while old version 1/2 saves retain their full roster.
+
+Enemy defeats can leave deterministic supplies, temporary attack/defense buffs, or rare equipment. Pickup occurs on the movement destination and commits the move, preventing undo exploits. Rare items are recovered after victory, with common leftovers salvaged for gold. Battle-start gold, inventory, and supply snapshots prevent retry duplication, including full-armory salvage farming. Equipment bonuses are computed once on deployment; equipped items cannot be sold or shared between heroes. The armory has a 64-item capacity with overflow salvage.
+
+The pixel-edition suite now passes **48 checks**, including a 24-encounter simulation from the two-hero opening. The new local `ember-company-3d` edition passes **5 additional checks** for camera projection, rotated tile picking math, independent storage, local dependency ordering, and parity with the shared campaign source. The WebGL renderer uses lit triangle geometry and reuses static terrain buffers during animation. It requires no CDN, imported models, or runtime network APIs.
+
+Browser verification covered both entry points, two-hero rosters, WebGL rendering, mouse picking, keyboard movement, undo, camera rotation, and paced combat. An isolated test save verified early recruitment, unique rare-weapon ownership, gold deduction, deployment into the next battle, and the actual equipped attack/defense bonuses. The temporary test pages were removed afterward. No console errors or warnings were reported in the inspected previews. Browser automation still cannot visit file URLs under its policy, so browser checks used a loopback static server; dependency/classic-script checks cover the direct-file loading structure. WebGL frame rate and availability remain hardware/browser dependent.
+
+## Amber Road theme verification
+
+Renamed the visible game, all six heroes, four enemy archetypes and the boss, eight maps and regions, weapons, loot, and camp/UI copy. Retained internal IDs, item keys, and save keys. The legacy-save check now explicitly loads the old roster names and old weapon label, then confirms the new canonical labels and unchanged attack stat. Shared source and world.css remain byte-identical between editions through sync-3d.mjs.
+
+Visual review covered every pixel-art biome, all six portraits, the caravan camp, and a live WebGL battle. Both preview pages rendered without console warnings or errors. The 48 campaign checks and 5 WebGL checks pass.

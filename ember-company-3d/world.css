@@ -1,0 +1,31 @@
+/* Amber Road palette and original woven/geometric ornament. No remote assets. */
+:root{--ink:#263f43;--muted:#80796a;--paper:#f5eedf;--line:#d9cdb5;--green:#24616a;--gold:#ae7737;--red:#a45040}
+body{background-color:var(--paper);background-image:radial-gradient(#a6782a0c .7px,transparent .7px);background-size:7px 7px}
+.masthead{background:#173e46;border-bottom-color:#cc9a50;position:relative}
+.masthead::after{content:"";position:absolute;bottom:0;left:0;right:0;height:5px;background:repeating-linear-gradient(45deg,transparent 0 8px,#e5b76866 8px 10px,transparent 10px 18px),repeating-linear-gradient(-45deg,transparent 0 8px,#e5b76866 8px 10px,transparent 10px 18px);pointer-events:none}
+.brand{letter-spacing:1.7px}.brand-icon{color:#e5bb74}.brand small{color:#cfbda0;letter-spacing:2.8px}.save-state{color:#adc8c5}
+h1{color:#244f55}.eyebrow{color:#a56d2c}.expedition-heading p{color:#7e7665}
+.turnbar{background:#e6e8db;border-color:#c6cebe;border-top:3px solid #b88b48}.round .pulse{background:#458c85}
+.battlefield{border-color:#c9bc9f;box-shadow:0 5px 20px #553d2010}.map-toolbar{background:#ebe2cf;color:#49605b}.map-footer{background:#eee6d6;border-color:#d8cdb7}
+.canvas-wrap{background:#668273}.canvas-wrap::after{content:"";position:absolute;inset:0;border:3px solid #6f59382b;pointer-events:none}
+.panel{background:#faf5e9;border-color:#d9ccb3}.panel-caption{color:#8c7759;border-color:#e5d9c1}.active-heading h2{color:#234d54}.active-heading canvas{background:#e8d9ba;border-color:#c7b184}
+.team-badge{background:#dce9df;color:#2b6560}.weapon-line{background:#efe4cd;border-color:#dfd0ae}.commands button{border-color:#d9ccb1}.commands button.selected,.commands button.active{background:#28656c;color:#fff3d7}
+.company-title{color:#5b6657}.hero-card{background:#f8f1e2;border-color:#d9c9a9}.hero-card.active{background:#e7ecdf;border-color:#6d9b91;box-shadow:inset 0 3px #3c7778}.hero-card.locked{background:#e9e1d1}.hero-card canvas{background:#e5d9bc}
+.page-footer{border-color:#d8c9ab}.page-footer>span{color:#99723f}.text-button{color:#5b776d}
+dialog{background:#faf3e4;border-color:#c7a667;box-shadow:0 24px 100px #173e4655}.modal-inner h2{color:#244f55}.modal-inner{border-top:5px solid #b88742}
+.primary{background:#24616a;border-color:#24616a;color:#fff3d9}.primary:hover{background:#1c5058}.secondary{background:#f2e6ce;border-color:#d3bd90;color:#4c5e55}
+.camp-scene{border:2px solid #ac8447;border-radius:3px;image-rendering:auto}.camp-card{background:#f5ecd9;border-color:#d9c7a5}.camp-section-title{color:#2d595d}.camp-supplies{background:#ede2c9;border-color:#d7c39d}
+.equipment-select select{background:#faf3e4;border-color:#cdbb96;color:#335d5e}.inventory-item{background:#f1e5ce;border-color:#d7c39e}.recruit-welcome{background:#e3ead7;color:#38625c!important}
+.pace-label select{background:#faf3e4;border-color:#cdbb96;color:#335d5e}.dossier-portrait{border-color:#bd9a5b}
+@media(max-width:560px){.brand{font-size:15px;letter-spacing:1px}.brand small{font-size:7px;letter-spacing:1.5px}.brand-icon{font-size:29px}}
+
+/* Smooth illustrated battlefield; portrait-free command panel. */
+.canvas-wrap{background:radial-gradient(ellipse at 40% 28%,#e6e7d7,#b3c4b7 65%,#8eaaa4);isolation:isolate}
+#board{image-rendering:auto}.canvas-wrap::after{border:1px solid #d4c19b66;box-shadow:inset 0 0 42px #254d3712}
+.queue-chip{border-radius:9px;background:linear-gradient(135deg,#fff7e7,#dce6d7);overflow:hidden}.queue-chip.enemy{background:linear-gradient(135deg,#f3e1d1,#d9b29e)}.queue-chip.current{box-shadow:0 2px 9px #274d4533}
+.hero-card{border-radius:9px;background:linear-gradient(145deg,#fff9ed,#ede7d7)}.hero-card canvas{background:transparent!important;image-rendering:auto!important}
+.active-heading{margin:18px 0 21px;min-height:45px}.active-heading h2{font-size:32px}.active-heading div>span{font-size:10px}.team-badge{border-radius:10px;padding:5px 8px}
+.panel,.battlefield{border-radius:10px}.battlefield{box-shadow:0 10px 35px #294a3614}.turnbar{border-radius:10px}.commands button{border-radius:7px}.weapon-line{border-radius:7px}
+.camp-scene{max-height:none;aspect-ratio:2.4/1;object-fit:cover;border-radius:9px;box-shadow:0 6px 22px #294a3620}.camp-character canvas{background:transparent;image-rendering:auto}
+@media(min-width:1051px){.battle-layout{grid-template-columns:minmax(0,1fr) 260px}}
+@media(max-width:560px){.brand{font-size:12px;gap:7px}.brand small{font-size:6px;letter-spacing:1.2px}.header-right{gap:4px}.header-right .quiet{font-size:10px;padding:7px 6px}.brand-icon{font-size:23px}.active-heading h2{font-size:25px}}

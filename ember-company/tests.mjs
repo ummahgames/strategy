@@ -8,7 +8,7 @@ const P=globalThis.EmberPersistence;
 import './animations.js';
 const A=globalThis.EmberAnimations;
 let checks=0;function test(name,fn){fn();checks++;console.log('PASS '+name);}
-const fresh=()=>E.startBattle(E.createCampaign());
+const fresh=()=>{const c=E.createCampaign();c.heroes.forEach(h=>h.unlocked=true);return E.startBattle(c);};
 test('six distinct heroes, first actor and legal starts',()=>{const c=fresh();assert.equal(c.heroes.length,6);assert.equal(E.active(c).id,'finn');assert.equal(new Set(c.units.map(u=>u.x+','+u.y)).size,c.units.length);});
 test('every map connects starting army to enemies without crossing blockers',()=>{for(let n=0;n<160;n++){const c=E.createCampaign();c.battle=n;E.startBattle(c);const unit={...c.units[0],move:1000};const reachable=E.reachable({...c,units:[unit]},unit);for(const v of c.units){assert.ok(E.TERRAIN[c.tiles[v.y][v.x]].cost<99,`walkable spawn ${n}`);assert.ok(reachable.has(v.x+','+v.y),`map ${n} reachable ${v.id}`);}}});
 test('movement obeys costs, occupancy, and once-per-turn constraint',()=>{const c=fresh(),u=E.active(c);assert.equal(E.moveUnit(c,12,7),false);assert.equal(E.moveUnit(c,1,6),false);assert.equal(E.moveUnit(c,3,7),true);assert.equal(E.moveUnit(c,4,7),false);assert.equal(u.x,3);});
@@ -103,7 +103,7 @@ test('warlords remain stronger than their escorts in later expeditions', () => {
   for(let n=7;n<200;n+=8){
     const c=E.createCampaign();c.battle=n;E.startBattle(c);
     const [boss,...escorts]=c.enemies;
-    assert.equal(boss.name,'Ash Warlord');
+    assert.equal(boss.name,'The Ash Regent');
     for(const e of escorts){assert.ok(boss.hp>e.hp);assert.ok(boss.atk>e.atk);assert.ok(boss.def>e.def);}
   }
 });
@@ -154,9 +154,14 @@ test('victory reload applies free camp recovery exactly once', () => {
 
 test('legacy full-state saves migrate without loading stale unit coordinates', () => {
   const c=fresh();c.units[0].x=8;
+  const legacyNames=['Rhea','Bram','Lyra','Orin','Sana','Finn'];
+  c.heroes.forEach((h,i)=>h.name=legacyNames[i]);c.heroes[0].weapon='Dawnblade';
   const loaded=P.restoreCampaign(JSON.stringify(c));assert.ok(loaded);
   assert.equal(loaded.units[0].x,1);
-  assert.equal(loaded.heroes[0].name,'Rhea');
+  assert.equal(loaded.heroes[0].name,'Amira');
+  assert.deepEqual(loaded.heroes.map(h=>h.name),['Amira','Kwame','Zuri','Arjun','Ayesha','Tariq']);
+  assert.equal(loaded.heroes[0].weapon,'Dawn sabre');
+  assert.equal(loaded.heroes[0].atk,c.heroes[0].atk);
 });
 
 test('malformed saves fail safely and never inject display strings', () => {
@@ -167,7 +172,7 @@ test('malformed saves fail safely and never inject display strings', () => {
     s=>s.battle=0.5,s=>s.potions=-1,s=>s.gold='100',s=>s.heroes[0].move=999];
   for(const mutate of cases){const s=P.campaignSave(fresh());mutate(s);assert.equal(P.restoreCampaign(JSON.stringify(s)),null);}
   const s=P.campaignSave(fresh());s.heroes[0].name='<img src=x onerror=alert(1)>';
-  assert.equal(P.restoreCampaign(JSON.stringify(s)).heroes[0].name,'Rhea');
+  assert.equal(P.restoreCampaign(JSON.stringify(s)).heroes[0].name,'Amira');
   const dead=P.campaignSave(fresh());dead.heroes.forEach(h=>h.hp=0);
   assert.ok(E.alive(E.active(P.restoreCampaign(JSON.stringify(dead)))));
 });
@@ -210,7 +215,7 @@ if(u.id==='sana'&&u.mp>=3){let best;for(const t of friends){if(t.maxHp-t.hp<10)c
 E.moveUnit(c,choice.x,choice.y);const target=foes.find(t=>E.validTarget(c,u,t,'skill'));if(target&&['orin','rhea','lyra','finn'].includes(u.id)){E.act(c,'skill',target.id);return;}const t=foes.filter(t=>E.validTarget(c,u,t,'attack')).sort((a,b)=>a.hp-b.hp)[0];if(t)E.act(c,'attack',t.id);else if(u.hp<u.maxHp-15&&c.potions)E.act(c,'potion',u.id);else E.act(c,'guard',u.id);
 }
 test('procedural fields are deterministic and vary across repeated biomes',()=>{for(let n=0;n<100;n++){assert.deepEqual(E.generateMap(n),E.generateMap(n));assert.notDeepEqual(E.generateMap(n),E.generateMap(n+8));}});
-test('complete 24 consecutive encounters using public gameplay actions',()=>{const c=fresh();for(let n=0;n<24;n++){let turns=0;while(c.mode==='battle'&&turns<1500){if(E.active(c).side==='enemy')E.enemyTurn(c);else player(c);turns++;}assert.equal(c.mode,'victory',`encounter ${n+1}: ${c.mode} after ${turns} actions`);console.log(`  Encounter ${n+1}: won in ${turns} actions, ${c.round} rounds`);E.enterCamp(c);E.campAction(c,'rest');for(const h of c.heroes){if(h.level>=3&&!h.promoted)E.campAction(c,'promote',h.id);E.campAction(c,'upgrade',h.id);}c.battle++;E.startBattle(c);}});
+test('complete 24 consecutive encounters using public gameplay actions',()=>{const c=E.startBattle(E.createCampaign());for(let n=0;n<24;n++){let turns=0;while(c.mode==='battle'&&turns<1500){if(E.active(c).side==='enemy')E.enemyTurn(c);else player(c);turns++;}assert.equal(c.mode,'victory',`encounter ${n+1}: ${c.mode} after ${turns} actions`);console.log(`  Encounter ${n+1}: won in ${turns} actions, ${c.round} rounds`);E.enterCamp(c);E.campAction(c,'rest');for(const h of c.heroes){if(h.level>=3&&!h.promoted)E.campAction(c,'promote',h.id);E.campAction(c,'upgrade',h.id);}c.battle++;E.startBattle(c);}});
 test('animated movement follows legal weighted paths without diagonal shortcuts',()=>{
  for(let n=0;n<40;n++){
   const c=E.createCampaign();c.battle=n;E.startBattle(c);const u=E.active(c);
@@ -263,17 +268,132 @@ test('action animations distinguish weapons, magic, healing, and guard',()=>{
 
 test('runtime dependencies also load as classic scripts without an HTTP module loader',()=>{
  const sandbox={console};
- for(const name of ['engine.js','persistence.js','animations.js','art.js']){
+ for(const name of ['engine.js','persistence.js','animations.js','characters.js','art.js']){
   runInNewContext(readFileSync(new URL(name,import.meta.url),'utf8'),sandbox,{filename:name});
  }
  assert.equal(typeof sandbox.EmberEngine.startBattle,'function');
  assert.equal(typeof sandbox.EmberArt.drawMap,'function');
+ assert.equal(typeof sandbox.EmberCharacters.draw,'function');
  assert.equal(typeof sandbox.EmberPersistence.readCompany,'function');
  assert.equal(typeof sandbox.EmberAnimations.sampleMovement,'function');
  const html=readFileSync(new URL('index.html',import.meta.url),'utf8');
+ assert.ok(!html.includes('id="portrait"'));
  assert.ok(!html.includes('type="module"'));
  const scripts=[...html.matchAll(/<script defer src="([^"]+)"/g)].map(m=>m[1]);
- assert.deepEqual(scripts,['engine.js','persistence.js','animations.js','art.js','app.js']);
+ assert.deepEqual(scripts,['engine.js','persistence.js','animations.js','characters.js','art.js','app.js']);
+});
+
+test('new expeditions start with two heroes and a gentle first encounter',()=>{
+ const c=E.startBattle(E.createCampaign());
+ assert.deepEqual(E.party(c).map(h=>h.id),['rhea','sana']);
+ assert.equal(c.units.filter(u=>u.side==='ally').length,2);
+ assert.equal(c.enemies.length,2);assert.equal(E.active(c).id,'rhea');
+ assert.ok(c.enemies.every(u=>u.hp<=14&&u.atk<=5));
+});
+
+test('recruits join at milestones and catch up without duplicate recruitment',()=>{
+ const c=E.createCampaign();c.heroes[0].level=5;c.heroes.find(h=>h.id==='sana').level=5;
+ for(const [wins,id] of [[2,'lyra'],[4,'bram'],[6,'orin'],[8,'finn']]){
+  c.mode='victory';c.wins=wins;assert.ok(E.enterCamp(c));
+  const h=c.heroes.find(h=>h.id===id);assert.ok(h.unlocked);assert.equal(h.level,5);
+  assert.equal(E.unlockHero(c,id),false);
+ }
+ assert.equal(E.party(c).length,6);
+});
+
+test('early hiring enforces availability and costs',()=>{
+ const c=E.createCampaign();c.mode='camp';c.gold=80;
+ assert.equal(E.campAction(c,'recruit','lyra'),false);
+ c.wins=1;assert.ok(E.campAction(c,'recruit','lyra'));assert.equal(c.gold,0);
+ assert.equal(E.campAction(c,'recruit','lyra'),false);
+ assert.equal(E.campAction(c,'upgrade','finn'),false);
+});
+
+test('locked heroes do not receive battle XP or enter initiative',()=>{
+ const c=E.startBattle(E.createCampaign());
+ c.units.filter(u=>u.side==='enemy').forEach(u=>u.hp=0);E.checkEnd(c);
+ assert.equal(c.heroes.find(h=>h.id==='finn').xp,0);
+ assert.equal(c.heroes.find(h=>h.id==='finn').level,1);
+ assert.ok(!c.queue.includes('finn'));
+});
+
+test('legacy saves retain the full roster; new saves preserve recruit flags',()=>{
+ const modern=P.campaignSave(E.startBattle(E.createCampaign()));
+ const loaded=P.restoreCampaign(JSON.stringify(modern));assert.equal(E.party(loaded).length,2);
+ const legacy=JSON.parse(JSON.stringify(modern));legacy.version=2;
+ legacy.heroes.forEach(h=>delete h.unlocked);
+ assert.equal(E.party(P.restoreCampaign(JSON.stringify(legacy))).length,6);
+});
+
+test('the first enemy drops a deterministic pickup exactly once',()=>{
+ const c=fresh(),u=E.active(c),t=c.units.find(v=>v.id==='e0');
+ u.x=3;u.y=4;t.x=4;t.y=4;t.hp=1;
+ assert.ok(E.act(c,'attack',t.id));assert.equal(c.loot.length,1);
+ assert.equal(c.loot[0].type,'herb');assert.equal(c.loot[0].x,4);
+ E.dropLoot(c,t);assert.equal(c.loot.length,1);
+});
+
+test('battle pickups apply once and temporary buffs stay out of hero saves',()=>{
+ for(const type of ['herb','ether','fury','ward','tonic','embersteel']){
+  const c=fresh(),u=E.active(c),hp=u.hp,mp=u.mp,potions=c.potions;
+  u.hp=5;u.mp=0;c.loot=[{uid:'test-drop',type,x:3,y:7}];
+  assert.ok(E.moveUnit(c,3,7));assert.equal(c.loot.length,0);assert.equal(c.pickupRevision,1);
+  if(type==='herb')assert.equal(u.hp,17);
+  if(type==='ether')assert.equal(u.mp,6);
+  if(type==='fury')assert.equal(u.tempAtk,3);
+  if(type==='ward')assert.equal(u.tempDef,2);
+  if(type==='tonic')assert.equal(c.potions,potions+1);
+  if(type==='embersteel')assert.equal(c.inventory[0].type,'embersteel');
+  E.collectLoot(c,u);assert.equal(c.pickupRevision,1);
+  const save=P.campaignSave(c);assert.equal(save.inventory.length,0);
+  assert.equal(save.potions,potions);
+  assert.ok(!('tempAtk' in save.heroes[0]));
+ }
+});
+
+test('rare equipment is recovered after victory and common supplies are salvaged',()=>{
+ const c=fresh();c.loot=[{uid:'rare',type:'starforged',x:8,y:8},{uid:'common',type:'ether',x:8,y:7}];
+ c.units.filter(u=>u.side==='enemy').forEach(u=>u.hp=0);E.checkEnd(c);
+ assert.equal(c.inventory[0].uid,'rare');assert.equal(c.salvageGold,8);
+ assert.equal(c.gold,120+c.reward+8);assert.equal(c.loot.length,0);
+ const loaded=P.restoreCampaign(JSON.stringify(P.campaignSave(c)));assert.equal(loaded.inventory[0].type,'starforged');
+});
+
+test('equipment bonuses are applied once and cannot be shared or equipped mid-battle',()=>{
+ const c=fresh();c.mode='camp';c.inventory=[{uid:'weapon-a',type:'starforged'},{uid:'relic-a',type:'ironward'}];
+ assert.ok(E.equipItem(c,'rhea','weapon-a','equippedWeapon'));
+ assert.ok(E.equipItem(c,'rhea','relic-a','equippedRelic'));
+ assert.equal(E.equipItem(c,'sana','weapon-a','equippedWeapon'),false);
+ const base=c.heroes[0].atk,def=c.heroes[0].def;
+ E.startBattle(c);assert.equal(c.units.find(u=>u.id==='rhea').atk,base+5);assert.equal(c.units.find(u=>u.id==='rhea').def,def+4);
+ E.startBattle(c);assert.equal(c.units.find(u=>u.id==='rhea').atk,base+5);
+ assert.equal(E.equipItem(c,'rhea','','equippedWeapon'),false);
+ const loaded=P.restoreCampaign(JSON.stringify(P.campaignSave(c)));assert.ok(loaded);assert.equal(loaded.heroes[0].equippedWeapon,'weapon-a');
+});
+
+test('equipped items cannot be sold and duplicate ownership is rejected on load',()=>{
+ const c=fresh();c.mode='camp';c.inventory=[{uid:'weapon-a',type:'embersteel'}];
+ E.equipItem(c,'rhea','weapon-a','equippedWeapon');assert.equal(E.sellItem(c,'weapon-a'),false);
+ const save=P.campaignSave(c);save.heroes.find(h=>h.id==='sana').equippedWeapon='weapon-a';
+ assert.equal(P.restoreCampaign(JSON.stringify(save)),null);
+ E.equipItem(c,'rhea','','equippedWeapon');const gold=c.gold;
+ assert.ok(E.sellItem(c,'weapon-a'));assert.equal(c.gold,gold+35);assert.equal(c.inventory.length,0);
+});
+
+test('enemy stats and numbers grow with later encounter levels',()=>{
+ const a=E.startBattle(E.createCampaign()),b=E.createCampaign();b.battle=20;E.startBattle(b);
+ assert.ok(b.enemies.length>a.enemies.length);
+ assert.ok(b.enemies[0].atk>a.enemies[0].atk);assert.ok(b.enemies[0].hp>a.enemies[0].hp);
+ assert.equal(b.enemies[0].level,21);
+});
+
+test('full-armory salvage cannot be farmed by restarting a battle',()=>{
+ const c=fresh();c.inventory=Array.from({length:64},(_,i)=>({uid:'bag-'+i,type:'embersteel'}));
+ E.startBattle(c);const gold=c.gold;
+ c.loot=[{uid:'overflow-drop',type:'starforged',x:3,y:7}];
+ assert.ok(E.moveUnit(c,3,7));assert.equal(c.gold,gold+40);assert.equal(c.inventory.length,64);
+ const save=P.campaignSave(c);assert.equal(save.gold,gold);assert.equal(save.inventory.length,64);
+ const loaded=P.restoreCampaign(JSON.stringify(save));assert.equal(loaded.gold,gold);
 });
 
 console.log(`\n${checks} checks passed.`);

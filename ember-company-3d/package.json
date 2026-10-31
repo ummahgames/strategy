@@ -1,0 +1,1 @@
+{"name": "ember-company-3d", "private": true, "type": "module", "scripts": {"start": "python3 -m http.server 8021 --bind 127.0.0.1", "test": "node tests.mjs"}}

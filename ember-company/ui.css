@@ -1,0 +1,17 @@
+/* Local presentation additions: pace, miniatures, recruitment, and equipment. */
+.map-options{display:flex;align-items:center;gap:14px;letter-spacing:0}
+.pace-label{display:flex;align-items:center;gap:5px;font-size:8px;color:#6c7865}
+.pace-label select{font:9px system-ui,sans-serif;background:#f5f4e8;color:#365b43;border:1px solid #c7d2be;border-radius:3px;padding:4px 5px;cursor:pointer}
+.pace-label select:focus-visible{outline:2px solid #b89757}
+.active-heading canvas{width:62px;height:62px}.hero-card canvas{width:42px;height:48px}.camp-character canvas{width:48px;height:54px}
+.hero-card.locked{opacity:.57;background:#e8e9df}.hero-card.locked canvas{filter:grayscale(1)}.hero-card.locked .meter{visibility:hidden}
+.camp-section-title{font:24px Georgia,serif;margin:24px 0 12px}
+.recruit-welcome{background:#e3ebd5;border:1px solid #bccdab;padding:12px;border-radius:4px;color:#3f6542!important}
+.recruit-card>p,.camp-footnote,.empty-armory{font-size:10px;color:#7e876e;line-height:1.65}
+.equipment-select{display:block;font-size:8px;color:#7b856c;margin:8px 0}
+.equipment-select select{display:block;width:100%;font:10px system-ui,sans-serif;padding:7px;margin-top:4px;border:1px solid #d0d8c1;background:#f1f2e6;color:#39543c;border-radius:3px}
+.inventory-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;background:#eeeee1;border:1px solid #d7dccb;border-radius:4px;margin:8px 0}
+.inventory-item strong{font-size:11px}.inventory-item small{display:block;font-size:9px;color:#838a74;margin-top:5px}.inventory-item button{font-size:9px;white-space:nowrap}.camp-footnote{margin-bottom:0}
+@media(max-width:1050px){.hero-card canvas{width:34px;height:40px}}
+@media(max-width:760px){.active-heading canvas{width:56px;height:56px}.hero-card canvas{width:38px;height:44px}.camp-character canvas{width:36px;height:42px}}
+@media(max-width:560px){.map-options{gap:6px}.map-options>span{display:none}.pace-label{font-size:7px}}
