@@ -77,4 +77,12 @@ test('illustrated camp asset is local and identical in both editions',()=>{
  assert.ok(asset.length>1000);assert.deepEqual(asset.subarray(0,8),Buffer.from([137,80,78,71,13,10,26,10]));
  assert.deepEqual(asset,readFileSync(new URL('../ember-company/assets/caravan-camp.png',import.meta.url)));
 });
+test('unavailable WebGL returns control to the illustrated renderer with an explanation',()=>{
+ const previousDocument=globalThis.document,notes=[];
+ globalThis.document={createElement:()=>({})};
+ try{
+  assert.equal(G.create({getContext:()=>null,parentElement:{append:note=>notes.push(note)}}),null);
+  assert.match(notes[0].textContent,/illustrated 2D/);
+ }finally{if(previousDocument===undefined)delete globalThis.document;else globalThis.document=previousDocument;}
+});
 console.log(`\n${passed} WebGL edition checks passed.`);

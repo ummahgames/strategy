@@ -13,7 +13,7 @@ const noise=(x,y,k=0)=>{const n=Math.sin(x*127.1+y*311.7+k*74.7)*43758.5453;retu
 const identity=new Float32Array([1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]);
 function modelMatrix(x,y,z,angle){const c=Math.cos(angle),s=Math.sin(angle);return new Float32Array([c,0,-s,0,0,1,0,0,s,0,c,0,x,y,z,1]);}
 function mesh(){
- const result={cube:[],sphere:[],leaf:[],blade:[],arch:[]};
+ const result={cube:[],sphere:[],leaf:[],blade:[],arch:[],star:[]};
  const tri=(out,a,b,c,na,nb,nc)=>{const n=vec.norm(vec.cross(vec.sub(b,a),vec.sub(c,a)));for(const [p,q] of [[a,na||n],[b,nb||n],[c,nc||n]])out.push([...p,...q]);};
  const faces=[[[1,0,0],[[.5,-.5,-.5],[.5,.5,-.5],[.5,.5,.5],[.5,-.5,.5]]],[[-1,0,0],[[-.5,-.5,.5],[-.5,.5,.5],[-.5,.5,-.5],[-.5,-.5,-.5]]],[[0,1,0],[[-.5,.5,-.5],[-.5,.5,.5],[.5,.5,.5],[.5,.5,-.5]]],[[0,-1,0],[[-.5,-.5,.5],[-.5,-.5,-.5],[.5,-.5,-.5],[.5,-.5,.5]]],[[0,0,1],[[.5,-.5,.5],[.5,.5,.5],[-.5,.5,.5],[-.5,-.5,.5]]],[[0,0,-1],[[-.5,-.5,-.5],[-.5,.5,-.5],[.5,.5,-.5],[.5,-.5,-.5]]]];
  for(const [n,p] of faces)for(const i of [0,1,2,0,2,3])result.cube.push([...p[i],...n]);
@@ -32,6 +32,7 @@ function mesh(){
  for(let i=0;i<12;i++){const t=i/12,s=(i+1)/12,w=Math.sin(t*Math.PI)*.16,ww=Math.sin(s*Math.PI)*.16;const a=[t-.5,Math.sin(t*Math.PI)*.18,-w],b=[s-.5,Math.sin(s*Math.PI)*.18,-ww],c=[s-.5,Math.sin(s*Math.PI)*.18,ww],d=[t-.5,Math.sin(t*Math.PI)*.18,w];tri(result.leaf,a,b,c,[0,1,0],[0,1,0],[0,1,0]);tri(result.leaf,a,c,d,[0,1,0],[0,1,0],[0,1,0]);}
  for(let i=0;i<16;i++){const t=i/16,s=(i+1)/16,x=t*t*.26,xx=s*s*.26,w=.07*(1-t)+.006,ww=.07*(1-s)+.006;tri(result.blade,[x-w,t-.5,0],[xx-ww,s-.5,0],[xx+ww,s-.5,0],[0,0,1],[0,0,1],[0,0,1]);tri(result.blade,[x-w,t-.5,0],[xx+ww,s-.5,0],[x+w,t-.5,0],[0,0,1],[0,0,1],[0,0,1]);}
  for(let i=0;i<16;i++){const a=i*Math.PI/16,b=(i+1)*Math.PI/16;for(const z of [-.5,.5]){const p=[Math.cos(a)*.5,Math.sin(a)*.5,z],q=[Math.cos(b)*.5,Math.sin(b)*.5,z],r=[Math.cos(a)*.32,Math.sin(a)*.32,z],s=[Math.cos(b)*.32,Math.sin(b)*.32,z];tri(result.arch,p,r,s);tri(result.arch,p,s,q);}const p=[Math.cos(a)*.5,Math.sin(a)*.5,-.5],q=[Math.cos(b)*.5,Math.sin(b)*.5,-.5],r=[q[0],q[1],.5],s=[p[0],p[1],.5];tri(result.arch,p,q,r);tri(result.arch,p,r,s);}
+ for(let i=0;i<16;i++){const a=i*Math.PI/8,b=(i+1)*Math.PI/8,r=i%2?.27:.5,rr=(i+1)%2?.27:.5;tri(result.star,[0,0,0],[Math.cos(a)*r,0,Math.sin(a)*r],[Math.cos(b)*rr,0,Math.sin(b)*rr],[0,1,0],[0,1,0],[0,1,0]);}
  return result;
 }
 const meshes=mesh();
@@ -114,14 +115,25 @@ function create(canvas){
   vertices=[];const biome=E.MAPS[c.battle%8].type,earth=biome==='grove',sandstone=['desert','ruins','fort'].includes(biome);
   // Continuous ground, softly rounded edge stones, and natural raised ground replace tile blocks.
   add('cube',0,-.34,0,14.03,.45,10.03,earth?'#9a805c':'#7d9170');add('cube',0,-.58,0,14.1,.06,10.1,'#5d7264');
-  const colors={g:earth?'#bda475':'#a5b68b',f:earth?'#a88f64':'#90a477',r:'#cbbb94',w:'#5599a4',b:'#bda675',m:sandstone?'#d6ba8c':'#a7ae97',s:'#dec896',h:'#b2b58b',a:'#d0bc97'};
+  const colors={g:earth?'#bda475':'#a5b68b',f:earth?'#a88f64':'#90a477',r:'#cbbb94',w:'#5599a4',b:'#bda675',m:sandstone?'#d6ba8c':'#a7ae97',s:'#dec896',h:biome==='desert'?'#d6bd8c':'#b2b58b',a:'#d0bc97'};
   for(let y=0;y<10;y++)for(let x=0;x<14;x++){
    const t=c.tiles[y][x],wx=x-6.5,wz=y-4.5,h=height(c,x,y),col=hex(colors[t]).map(v=>v*(.995+noise(x,y,4)*.01));
    // Adjacent ground patches touch; hills rise through shared corner vertices.
    const corner=(dx,dz)=>{if(['w','b'].includes(t))return t==='b'?-.06:h;let sum=0;for(const xx of [x+dx-.5,x+dx+.5])for(const yy of [y+dz-.5,y+dz+.5]){const tx=Math.max(0,Math.min(13,Math.round(xx))),ty=Math.max(0,Math.min(9,Math.round(yy)));sum+=c.tiles[ty][tx]==='h'?.2:.06;}return sum/4;};
    const p=[[-.5,-.5],[.5,-.5],[.5,.5],[-.5,.5]].map(([dx,dz])=>[wx+dx,corner(dx,dz),wz+dz]);
-   for(const i of [0,1,2,0,2,3])vertexData(p[i],[0,1,0],col);
+   for(const i of [0,1,2,0,2,3]){
+    let tint=col;
+    if(!['w','b','a'].includes(t)){
+     const [dx,dz]=[[-.5,-.5],[.5,-.5],[.5,.5],[-.5,.5]][i];tint=[0,0,0];let samples=0;
+     for(const xx of [x+dx-.5,x+dx+.5])for(const yy of [y+dz-.5,y+dz+.5]){
+      const tx=Math.max(0,Math.min(13,Math.round(xx))),ty=Math.max(0,Math.min(9,Math.round(yy))),neighbor=c.tiles[ty][tx];
+      const sample=['w','b'].includes(neighbor)?col:hex(colors[neighbor]);tint=tint.map((v,k)=>v+sample[k]);samples++;
+     }tint=tint.map(v=>v/samples);
+    }
+    vertexData(p[i],[0,1,0],tint);
+   }
    if(t==='w'||t==='b')for(let j=0;j<3;j++)add('sphere',wx-.3+j*.22,h+.006,wz+noise(x,y,j)*.6-.3,.2,.008,.013,'#9ac8c8');
+   if(t==='w')for(const [dx,dz] of [[-1,0],[1,0],[0,-1],[0,1]]){const tx=x+dx,ty=y+dz;if(tx<0||tx>13||ty<0||ty>9||['w','b'].includes(c.tiles[ty][tx]))continue;add('sphere',wx+dx*.48,h+.035,wz+dz*.48,dx?.12:1.02,.045,dz?.12:1.02,'#c5be94');}
    if(t==='b'){for(let j=0;j<8;j++)add('cube',wx-.44+j*.125,.16,wz,.115,.07,.9,j%2?'#c8b17f':'#b99f6d');for(const side of [-1,1]){segment([wx-.5,.34,wz+side*.44],[wx+.5,.34,wz+side*.44],.025,'#9d8357');for(const xx of [-.4,.4])segment([wx+xx,.14,wz+side*.44],[wx+xx,.39,wz+side*.44],.025,'#8f7651');}}
    if(t==='f')tree(wx-.18,h,wz-.18,biome,x+y*14);
    if(t==='m'){
@@ -130,7 +142,7 @@ function create(canvas){
      add('cube',wx,h+1.15,wz,.98,.1,.41,'#bd9967');for(const side of [-1,1]){add('dome',wx+side*.33,h+1.21,wz,.22,.12,.26,'#e6cda1');add('sphere',wx+side*.33,h+.5,wz+.18,.075,.13,.018,'#49818a');}
     }else for(let i=0;i<4;i++){const xx=wx+(noise(x,y,i)-.5)*.65,zz=wz+(noise(y,x,i+3)-.5)*.55;add('sphere',xx,h+.25+noise(i,x,4)*.14,zz,.5+noise(i,y,3)*.5,.5+noise(i,x,6)*.5,.5+noise(x,i,7)*.45,i%2?(sandstone?'#c8a475':'#9ca58d'):(sandstone?'#e0c38e':'#b8bea4'),i*.6,0,i*.1);}
    }
-   if(t==='a'&&(x+y)%3===0){add('cube',wx,h+.008,wz,.3,.012,.3,'#4e8990',Math.PI/4);add('cube',wx,h+.018,wz,.14,.008,.14,'#dfc38d',Math.PI/4);}
+   if(t==='a'&&(x+y)%3===0){add('star',wx,h+.008,wz,.48,.012,.48,'#377b85');add('cube',wx,h+.018,wz,.12,.008,.12,'#dfc38d',Math.PI/4);}
    if(['g','f','h'].includes(t)&&noise(x,y,1)>.32){for(let i=0;i<3;i++){const xx=wx+(noise(x,y,i+8)-.5)*.75,zz=wz+(noise(y,x,i+9)-.5)*.75;add('leaf',xx,h+.04,zz,.1,.45,.12,i%2?'#81945e':'#c7c496',i*2);if(noise(x,y,i+13)>.78)add('sphere',xx,h+.065,zz,.06,.04,.06,'#ebd6a1');}}
    if(t==='s'&&noise(x,y,8)>.65)add('sphere',wx+.18,h+.035,wz-.23,.22,.07,.14,'#c4aa7b');
   }
@@ -161,7 +173,7 @@ function create(canvas){
   for(const item of c.loot||[]){const x=item.x-6.5,z=item.y-4.5,h=height(c,item.x,item.y);add('vase',x,h+.14,z,.24,.28,.24,'#a1814e');add('dome',x,h+.31,z,.27,.12,.27,E.ITEMS[item.type].color);add('sphere',x,h+.56+Math.sin(time/350)*.04,z,.08,.14,.08,'#e9d79b');}
   const fx=ui.strike;if(fx){const p=fx.progress,a=fx.actor,b=fx.target,ay=height(c,a.x,a.y)+.9,by=height(c,b.x,b.y)+.8,heal=['heal','rally','guard'].includes(fx.kind);
    if(p<.55&&['heal','rally','fire','bolt','guard'].includes(fx.kind))ring(a.x-6.5,height(c,a.x,a.y)+.04,a.y-4.5,.24+p*.5,heal?'#d1e2ac':'#e8c491',.012);
-   if(p>=.2&&p<.57&&['arrow','bolt','fire'].includes(fx.kind)){const t=(p-.2)/.35,x=a.x+(b.x-a.x)*t-6.5,z=a.y+(b.y-a.y)*t-4.5,y=ay+(by-ay)*t+Math.sin(t*Math.PI)*.17;add(fx.kind==='arrow'?'cylinder':'sphere',x,y,z,.07,fx.kind==='arrow'?.4:.19,.07,fx.kind==='fire'?'#ffd09a':'#d3e0de',0,Math.PI/2);}
+   if(p>=.2&&p<.57&&['arrow','bolt','fire'].includes(fx.kind)){const t=(p-.2)/.35,x=a.x+(b.x-a.x)*t-6.5,z=a.y+(b.y-a.y)*t-4.5,y=ay+(by-ay)*t+Math.sin(t*Math.PI)*.17;add(fx.kind==='arrow'?'cylinder':'sphere',x,y,z,.07,fx.kind==='arrow'?.4:.19,.07,fx.kind==='fire'?'#ffd09a':'#d3e0de',Math.atan2(b.x-a.x,b.y-a.y),Math.PI/2);}
    if(p>.43&&p<.88&&['slash','shadow'].includes(fx.kind)){const t=(p-.43)/.45;for(let i=0;i<14;i++){const a=-1.4+i*.13+t*.9,aa=a+.13,r=.42+t*.15;segment([b.x-6.5+Math.cos(a)*r,by+Math.sin(a)*r,b.y-4.5+.05],[b.x-6.5+Math.cos(aa)*r,by+Math.sin(aa)*r,b.y-4.5+.05],.012,fx.kind==='shadow'?'#a5e0d6':'#fff0c9');}}
    if(p>.55){const t=(p-.55)/.45;ring(b.x-6.5,height(c,b.x,b.y)+.05,b.y-4.5,.17+t*.6,heal?'#c4e6a6':'#f4d393',.012);for(let i=0;i<12;i++){const a=i*Math.PI/6+t*2;add('sphere',b.x-6.5+Math.cos(a)*(.1+t*.5),by+t*.45+Math.sin(i)*.14,b.y-4.5+Math.sin(a)*(.1+t*.5),.02+(1-t)*.06,.03+(1-t)*.1,.02+(1-t)*.06,heal?'#d2edb3':fx.kind==='fire'?'#f7c385':'#f7e4b7');}}
   }

@@ -87,3 +87,13 @@ Browser verification covered both entry points, two-hero rosters, WebGL renderin
 Renamed the visible game, all six heroes, four enemy archetypes and the boss, eight maps and regions, weapons, loot, and camp/UI copy. Retained internal IDs, item keys, and save keys. The legacy-save check now explicitly loads the old roster names and old weapon label, then confirms the new canonical labels and unchanged attack stat. Shared source and world.css remain byte-identical between editions through sync-3d.mjs.
 
 Visual review covered every pixel-art biome, all six portraits, the caravan camp, and a live WebGL battle. Both preview pages rendered without console warnings or errors. The 48 campaign checks and 5 WebGL checks pass.
+
+## Smooth graphics replacement
+
+The pixel renderer was replaced by anti-aliased, cached canvas miniatures and smooth terrain paths. The active-unit portrait panel and dossier portrait were removed. UI icons show full unit miniatures. Camp artwork is a bundled local image with a code-drawn fallback; its exact generation prompt is stored in assets/ART_NOTES.md.
+
+The WebGL renderer now uses smooth normals, rounded limbs, lathed clothing and head wraps, continuous curved blades, organic foliage, sandstone arches, blended ground colors, filtered cast shadows, and animated water shading. Terrain and character pose geometry are cached in GPU buffers; only changing overlays upload on idle redraws. Geometry checks cover finite vertices, buffer bounds, cache reuse, and picking across all eight biomes.
+
+Visual QA caught and fixed water hidden below the terrain base, shadow precision artifacts, and terrain colors that made desert hills appear green. Arrow effects now restore their local canvas transform before drawing impact particles. Shader initialization failure replaces the WebGL canvas and hands control to the illustrated renderer.
+
+Verification: 48 campaign checks and 8 WebGL checks pass. Local browser checks covered both editions, regional scenery, bundled camp art, keyboard movement, guarded turn handoffs, enemy movement, melee targeting, camera rotation, and mouse picking after rotation. Both wide and narrow layouts were viewed. No console warnings or errors were observed in the tested scenes. Browser checks used local HTTP; classic-script compatibility is also checked for direct-file use. Frame rate on other devices is not guaranteed. Gameplay, IDs, item keys, and save keys remain unchanged.
