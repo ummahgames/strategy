@@ -3,3 +3,5 @@
 .camp-scene{width:100%;height:auto;image-rendering:pixelated;display:block;border:1px solid #a5b39b;border-radius:4px;margin:18px 0 14px;max-height:140px;object-fit:cover}
 
 .camp-top strong{white-space:nowrap}
+
+.map-options{display:flex;align-items:center;gap:14px;letter-spacing:0}.pace-label{display:flex;align-items:center;gap:5px;font-size:8px;color:#6c7865}.pace-label select{font:9px system-ui,sans-serif;background:#f5f4e8;color:#365b43;border:1px solid #c7d2be;border-radius:3px;padding:4px 5px;cursor:pointer}.pace-label select:focus-visible{outline:2px solid #b89757}@media(max-width:560px){.map-options{gap:6px}.map-options>span{display:none}.pace-label{font-size:7px}}

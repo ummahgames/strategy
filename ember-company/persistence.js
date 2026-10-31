@@ -1,13 +1,15 @@
-import { HEROES, createCampaign, startBattle, enterCamp } from './engine.js';
+(function(root){
+'use strict';
+const {HEROES,createCampaign,startBattle,enterCamp}=root.EmberEngine;
 
-export const SAVE_KEY = 'ember-company-v1';
+const SAVE_KEY = 'ember-company-v1';
 const integer = (value, min, max = Number.MAX_SAFE_INTEGER - 2) =>
   Number.isSafeInteger(value) && value >= min && value <= max;
 const copy = value => JSON.parse(JSON.stringify(value));
 
 // Persist company progression only. Restarting a field restores its starting
 // supplies as well as its starting HP/MP; spending a tonic cannot lose it on reload.
-export function campaignSave(campaign) {
+function campaignSave(campaign) {
   let c = campaign;
   if (c.mode === 'victory') {
     c = copy(c);
@@ -27,7 +29,7 @@ export function campaignSave(campaign) {
   };
 }
 
-export function restoreCampaign(raw) {
+function restoreCampaign(raw) {
   try {
     if (typeof raw !== 'string' || raw.length > 100_000) return null;
     const data = JSON.parse(raw);
@@ -72,12 +74,15 @@ export function restoreCampaign(raw) {
   }
 }
 
-export function readCompany(storage) {
+function readCompany(storage) {
   try { return restoreCampaign(storage.getItem(SAVE_KEY)); }
   catch { return null; }
 }
 
-export function writeCompany(storage, campaign) {
+function writeCompany(storage, campaign) {
   try { storage.setItem(SAVE_KEY, JSON.stringify(campaignSave(campaign))); return true; }
   catch { return false; }
 }
+
+root.EmberPersistence=Object.freeze({SAVE_KEY,campaignSave,restoreCampaign,readCompany,writeCompany});
+})(globalThis);

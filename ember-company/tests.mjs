@@ -1,6 +1,12 @@
+import { readFileSync } from 'node:fs';
+import { runInNewContext } from 'node:vm';
 import assert from 'node:assert/strict';
-import * as E from './engine.js';
-import * as P from './persistence.js';
+import './engine.js';
+const E=globalThis.EmberEngine;
+import './persistence.js';
+const P=globalThis.EmberPersistence;
+import './animations.js';
+const A=globalThis.EmberAnimations;
 let checks=0;function test(name,fn){fn();checks++;console.log('PASS '+name);}
 const fresh=()=>E.startBattle(E.createCampaign());
 test('six distinct heroes, first actor and legal starts',()=>{const c=fresh();assert.equal(c.heroes.length,6);assert.equal(E.active(c).id,'finn');assert.equal(new Set(c.units.map(u=>u.x+','+u.y)).size,c.units.length);});
@@ -91,6 +97,15 @@ test('enemy pathfinding takes a detour around a long wall', () => {
     else E.enemyTurn(c);
   }
   assert.ok(hero.hp<hero.maxHp,'enemy must eventually reach and attack');
+});
+
+test('warlords remain stronger than their escorts in later expeditions', () => {
+  for(let n=7;n<200;n+=8){
+    const c=E.createCampaign();c.battle=n;E.startBattle(c);
+    const [boss,...escorts]=c.enemies;
+    assert.equal(boss.name,'Ash Warlord');
+    for(const e of escorts){assert.ok(boss.hp>e.hp);assert.ok(boss.atk>e.atk);assert.ok(boss.def>e.def);}
+  }
 });
 
 test('camp enforces maximum weapon tiers, revival, and exact supply costs', () => {
@@ -195,5 +210,70 @@ if(u.id==='sana'&&u.mp>=3){let best;for(const t of friends){if(t.maxHp-t.hp<10)c
 E.moveUnit(c,choice.x,choice.y);const target=foes.find(t=>E.validTarget(c,u,t,'skill'));if(target&&['orin','rhea','lyra','finn'].includes(u.id)){E.act(c,'skill',target.id);return;}const t=foes.filter(t=>E.validTarget(c,u,t,'attack')).sort((a,b)=>a.hp-b.hp)[0];if(t)E.act(c,'attack',t.id);else if(u.hp<u.maxHp-15&&c.potions)E.act(c,'potion',u.id);else E.act(c,'guard',u.id);
 }
 test('procedural fields are deterministic and vary across repeated biomes',()=>{for(let n=0;n<100;n++){assert.deepEqual(E.generateMap(n),E.generateMap(n));assert.notDeepEqual(E.generateMap(n),E.generateMap(n+8));}});
-test('complete eight consecutive encounters using public gameplay actions',()=>{const c=fresh();for(let n=0;n<8;n++){let turns=0;while(c.mode==='battle'&&turns<1500){if(E.active(c).side==='enemy')E.enemyTurn(c);else player(c);turns++;}assert.equal(c.mode,'victory',`encounter ${n+1}: ${c.mode} after ${turns} actions`);console.log(`  Encounter ${n+1}: won in ${turns} actions, ${c.round} rounds`);E.enterCamp(c);E.campAction(c,'rest');for(const h of c.heroes){if(h.level>=3&&!h.promoted)E.campAction(c,'promote',h.id);E.campAction(c,'upgrade',h.id);}c.battle++;E.startBattle(c);}});
+test('complete 24 consecutive encounters using public gameplay actions',()=>{const c=fresh();for(let n=0;n<24;n++){let turns=0;while(c.mode==='battle'&&turns<1500){if(E.active(c).side==='enemy')E.enemyTurn(c);else player(c);turns++;}assert.equal(c.mode,'victory',`encounter ${n+1}: ${c.mode} after ${turns} actions`);console.log(`  Encounter ${n+1}: won in ${turns} actions, ${c.round} rounds`);E.enterCamp(c);E.campAction(c,'rest');for(const h of c.heroes){if(h.level>=3&&!h.promoted)E.campAction(c,'promote',h.id);E.campAction(c,'upgrade',h.id);}c.battle++;E.startBattle(c);}});
+test('animated movement follows legal weighted paths without diagonal shortcuts',()=>{
+ for(let n=0;n<40;n++){
+  const c=E.createCampaign();c.battle=n;E.startBattle(c);const u=E.active(c);
+  for(const key of E.reachable(c,u).keys()){
+   const [x,y]=key.split(',').map(Number),path=E.movementPath(c,u,x,y);
+   assert.deepEqual(path[0],{x:u.x,y:u.y});assert.deepEqual(path.at(-1),{x,y});
+   let cost=0;for(let i=1;i<path.length;i++){
+    assert.equal(E.distance(path[i-1],path[i]),1);assert.ok(E.TERRAIN[c.tiles[path[i].y][path[i].x]].cost<99);
+    cost+=E.TERRAIN[c.tiles[path[i].y][path[i].x]].cost;
+   }
+   assert.ok(cost<=u.move);
+   assert.deepEqual(A.sampleMovement(path,0),{x:u.x,y:u.y,bob:0});
+   const end=A.sampleMovement(path,1);assert.equal(end.x,x);assert.equal(end.y,y);
+  }
+ }
+});
+
+test('animation interpolation stays on route and respects reduced motion',()=>{
+ const path=[{x:0,y:0},{x:1,y:0},{x:1,y:1}];
+ const mid=A.sampleMovement(path,.25);assert.equal(mid.x,.5);assert.equal(mid.y,0);
+ const corner=A.sampleMovement(path,.5);assert.equal(corner.x,1);assert.equal(corner.y,0);
+ const later=A.sampleMovement(path,.75);assert.equal(later.x,1);assert.equal(later.y,.5);
+ assert.deepEqual(A.sampleMovement(path,.25,true),{x:0,y:0,bob:0});
+});
+
+test('animation clock pauses and clamps long background-frame gaps',()=>{
+ assert.deepEqual(A.timelineStep(100,5000,1000,true),{elapsed:100,progress:.1,done:false});
+ assert.equal(A.timelineStep(100,5000,1000).elapsed,150);
+ assert.equal(A.timelineStep(990,20,1000).done,true);
+ assert.ok(A.timing().step>A.timing('quick').step);
+ assert.ok(A.timing().attack>=1000);
+});
+
+test('planning enemy animation does not move units or spend a turn',()=>{
+ const c=fresh();c.turn=c.queue.findIndex(id=>id.startsWith('e'));
+ const before=JSON.stringify(c),plan=E.planEnemyTurn(c);assert.ok(plan);
+ assert.equal(JSON.stringify(c),before);
+ const path=E.movementPath(c,E.active(c),plan.x,plan.y);assert.ok(path);
+ assert.ok(E.resolveEnemyTurn(c,plan));assert.notEqual(JSON.stringify(c),before);
+});
+
+test('action animations distinguish weapons, magic, healing, and guard',()=>{
+ const byId=id=>E.HEROES.find(h=>h.id===id);
+ assert.equal(A.attackKind(byId('orin'),'skill'),'fire');
+ assert.equal(A.attackKind(byId('lyra'),'attack'),'arrow');
+ assert.equal(A.attackKind(byId('rhea'),'attack'),'slash');
+ assert.equal(A.attackKind(byId('sana'),'skill'),'heal');
+ assert.equal(A.attackKind(byId('bram'),'guard'),'guard');
+});
+
+test('runtime dependencies also load as classic scripts without an HTTP module loader',()=>{
+ const sandbox={console};
+ for(const name of ['engine.js','persistence.js','animations.js','art.js']){
+  runInNewContext(readFileSync(new URL(name,import.meta.url),'utf8'),sandbox,{filename:name});
+ }
+ assert.equal(typeof sandbox.EmberEngine.startBattle,'function');
+ assert.equal(typeof sandbox.EmberArt.drawMap,'function');
+ assert.equal(typeof sandbox.EmberPersistence.readCompany,'function');
+ assert.equal(typeof sandbox.EmberAnimations.sampleMovement,'function');
+ const html=readFileSync(new URL('index.html',import.meta.url),'utf8');
+ assert.ok(!html.includes('type="module"'));
+ const scripts=[...html.matchAll(/<script defer src="([^"]+)"/g)].map(m=>m[1]);
+ assert.deepEqual(scripts,['engine.js','persistence.js','animations.js','art.js','app.js']);
+});
+
 console.log(`\n${checks} checks passed.`);

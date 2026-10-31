@@ -4,18 +4,19 @@ A standalone, client-side pixel-art tactical RPG. Six heroes fight through an en
 
 ## Play locally
 
-Serve this folder using any static server. From this folder:
+Open `index.html` directly in your browser. All scripts and assets are local. You can also serve this folder with a static server:
 
 ```sh
 python3 -m http.server 8018 --bind 127.0.0.1
 ```
 
-Open http://127.0.0.1:8018. No installation, compilation, backend, or API is required. The game uses HTML, CSS, JavaScript modules, Canvas, optional synthesized audio, and localStorage. Fonts have system fallbacks; gameplay requires no external resources. A static HTTP server is needed because browsers restrict JavaScript modules on file URLs.
+Open http://127.0.0.1:8018. No installation, compilation, backend, or API is required. The game uses HTML, CSS, JavaScript, Canvas, optional synthesized audio, and localStorage. Fonts have system fallbacks; gameplay requires no external resources. Scripts load in dependency order without ES modules, so file URLs do not require a build or server. Save availability on file URLs depends on browser storage policy.
 
 ## Controls and rules
 
 - Units take individual turns in speed order, once per round. The current unit is outlined in gold.
 - Click/tap a blue tile to move, then choose an attack or skill and select a highlighted target. You can act without moving. Movement can be undone before acting.
+- Actions animate before the next unit acts. Use **Pace** above the battlefield to choose Deliberate (default), Standard, or Quick. Opening the field guide or hiding the tab pauses animations.
 - Guard ends the turn, grants +3 armor until the unit's next turn, and restores 1 MP. Tonics restore 22 HP.
 - Woods and high ground grant +2 defense and cost 2 movement; deep water and cliffs are impassable. Units block passage.
 - Defeat every enemy to earn gold and XP. Fallen heroes return to at least half HP at camp. Rest restores everyone's HP and MP. Weapons support five upgrades. Level 3 unlocks promotion.
@@ -25,7 +26,8 @@ Open http://127.0.0.1:8018. No installation, compilation, backend, or API is req
 ## Files
 
 - `engine.js`: deterministic combat, pathfinding, maps, AI, progression, camp economy.
-- `art.js`: original procedural pixel tiles and six character sprites.
+- `art.js`: original procedural pixel tiles, sprites, projectiles, and spell effects.
+- `animations.js`: pace settings, route interpolation, and the pause-aware visual clock.
 - `app.js`: input, UI, save state, audio, dialogs, turn scheduling.
 - `style.css`, `index.html`: responsive interface.
 - `persistence.js`: validated company saves, legacy migration, and safe storage fallback.
