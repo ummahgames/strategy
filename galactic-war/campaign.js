@@ -4,7 +4,7 @@ const Campaign = (() => {
   const difficulties = {easy:{reaction:4,reserve:16,commit:.6},medium:{reaction:2.5,reserve:12,commit:.7},hard:{reaction:1.5,reserve:10,commit:.8},expert:{reaction:.8,reserve:8,commit:.85}};
   function level(value){if(!/^[1-9][0-9]*$/.test(String(value)))throw Error('Level must be a positive whole number.');return String(value)}
   function seed(value,salt=0){let n=2166136261;for(const ch of level(value)+':'+salt)n=Math.imul(n^ch.charCodeAt(0),16777619)>>>0;return n}
-  function specification(value,difficulty){value=level(value);if(!difficulties[difficulty])throw Error('Unknown difficulty');let n=BigInt(value),phase=Number((n-1n)%12n),tier=Math.min(8,Number((n-1n)/12n>8n?8n:(n-1n)/12n));return {level:value,seed:seed(value),phase,tier,count:12+6*Math.min(2,Math.floor(phase/4)),strength:1+tier*.025}}
+  function specification(value,difficulty){value=level(value);if(!difficulties[difficulty])throw Error('Unknown difficulty');let n=BigInt(value),phase=Number((n-1n)%12n),tier=Math.min(8,Number((n-1n)/12n>8n?8n:(n-1n)/12n));return {level:value,seed:seed(value),phase,tier,count:n===1n?6:n===2n?8:n===3n?10:n<8n?12:n<16n?18:18+6*(phase%2),strength:1+tier*.025}}
   function map(spec){let random=rand(spec.seed),out=[];out.push({x:-.78,y:0},{x:.78,y:0});let pairs=(spec.count-2)/2;for(let i=0;i<pairs;i++){let column=i%3,row=Math.floor(i/3),rows=Math.ceil(pairs/3);let x=.18+column*.24,y=(row-(rows-1)/2)*.32+(random()-.5)*.035;out.push({x:-x,y},{x,y:-y})}return out}
   return {level,seed,specification,map,difficulties};
 })();
@@ -17,7 +17,7 @@ start=function(){
   if(!Campaign.difficulties[difficulty])difficulty='medium';
   const spec=Campaign.specification(level,difficulty);
   $('mapSize').value=String(spec.count);$('seed').value=String(spec.seed);
-  originalStart();config.level=level;config.generatorVersion=1;config.difficulty=difficulty;
+  originalStart();config.level=level;config.generatorVersion=2;config.difficulty=difficulty;
   const positions=Campaign.map(spec);
   nodes.forEach((p,i)=>{p.x=positions[i].x;p.y=positions[i].y;p.links=[];p.explored=p.owner===0;p.cooldown=0;p.resource=30;
     if(i>=2&&i%2===1){let pair=nodes[i-1];p.kind=pair.kind;p.ships=pair.ships;p.rate=pair.rate}
@@ -50,8 +50,8 @@ restore=function(data){if(data.config?.level)Campaign.level(data.config.level);i
 ai=function(){const settings=Campaign.difficulties[config.difficulty]||Campaign.difficulties.medium;
   for(let i=0;i<nodes.length;i++){const p=nodes[i];if(p.owner!==1)continue;
     const danger=fleets.filter(f=>f.b===i&&f.owner===0).reduce((n,f)=>n+f.ships,0);
-    if(danger>p.ships&&p.ships>=15&&p.shield<=0&&config.difficulty!=='easy'){p.ships-=15;p.shield=20}
-    if(config.difficulty==='expert'&&p.ships>70&&p.level<4){p.ships-=20;p.rate+=.5;p.level++}
+    if((config.progression!=='guided'||BigInt(config.level)>=7n)&&danger>p.ships&&p.ships>=15&&p.shield<=0&&config.difficulty!=='easy'){p.ships-=15;p.shield=20}
+    if((config.progression!=='guided'||BigInt(config.level)>=3n)&&config.difficulty==='expert'&&p.ships>70&&p.level<4){p.ships-=20;p.rate+=.5;p.level++}
     if(p.ships<=settings.reserve+8)continue;
     let targets=nodes.map((q,j)=>({q,j,d:Math.hypot(p.x-q.x,p.y-q.y)})).filter(t=>t.q.owner!==1&&canSend(i,t.j));
     const visible=t=>config.fog==='off'||config.fog==='on'&&t.q.owner!==0||nodes.some(q=>q.owner===1&&Math.hypot(q.x-t.q.x,q.y-t.q.y)<.5);

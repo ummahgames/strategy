@@ -8,11 +8,11 @@ function fleetPosition(f){let a=f.origin||nodes[f.a],b=nodes[f.b];return {x:a.x+
 const systemsTick=tick;
 tick=function(dt){
   if(ended)return;
-  const productionBefore=nodes.map(p=>p.ships),savedReserves=routes.map(r=>r.reserve),oldClocks=routes.map(r=>r.clock);
+  const savedReserves=new Map(routes.map(r=>[r,r.reserve]));
   if(config.routePolicy==='production')routes.forEach(r=>r.reserve=Math.max(r.reserve||0,nodes[r.a].ships));
   if(config.routePolicy==='waves')routes.forEach(r=>{if((r.waveClock=(r.waveClock||0)+dt)<5)r.clock=-1;else{r.clock=1;r.waveClock=0}});
   systemsTick(dt);
-  routes.forEach((r,i)=>{if(config.routePolicy==='production'&&savedReserves[i]!==undefined)r.reserve=savedReserves[i]});
+  routes.forEach(r=>{if(config.routePolicy==='production'&&savedReserves.has(r))r.reserve=savedReserves.get(r)});
   if(config.environment==='hazards')for(const f of fleets){let p=fleetPosition(f);if(Math.abs(p.x)<.13&&Math.abs(p.y)<.45){f.hazard=(f.hazard||0)+dt*.5;let loss=Math.floor(f.hazard);f.ships=Math.max(0,f.ships-loss);f.hazard-=loss}}
   fleets=fleets.filter(f=>f.ships>0);
   if(config.interception==='on'&&config.travel!=='instant'){

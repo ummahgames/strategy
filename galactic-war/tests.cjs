@@ -19,7 +19,7 @@ console.log('Galactic War simulation checks passed');
 vm.runInContext(fs.readFileSync(__dirname+'/campaign.js','utf8'),ctx);
 for(const difficulty of ['easy','medium','hard','expert'])for(let level=1;level<=120;level++){
  el('difficulty').value=difficulty;el('levelNumber').value=String(level);run('start()');
- assert.ok([12,18,24].includes(run('nodes.length')));
+ assert.ok([6,8,10,12,18,24].includes(run('nodes.length')));
  assert.equal(run('config.level'),String(level));
  assert.equal(run('(()=>{let s=new Set([0]),q=[0];while(q.length)for(const j of nodes[q.shift()].links)if(!s.has(j)){s.add(j);q.push(j)}return s.size})()'),run('nodes.length'));
  assert.equal(run('nodes[2].ships'),run('nodes[3].ships'));
@@ -46,7 +46,7 @@ assert.throws(()=>run("restore({...snapshot(),config:{...config,production:'corr
 console.log('216 rule-combination simulations and strict save checks passed');
 
 const html=fs.readFileSync(__dirname+'/index.html','utf8');const ids=new Set([...html.matchAll(/id="([^"]+)"/g)].map(m=>m[1]));
-for(const file of ['game.js','campaign.js','systems.js'])for(const match of fs.readFileSync(__dirname+'/'+file,'utf8').matchAll(/\$\('([^']+)'\)/g))assert.ok(ids.has(match[1]),'Missing DOM element '+match[1]);
+for(const file of ['game.js','campaign.js','systems.js','playability.js'])for(const match of fs.readFileSync(__dirname+'/'+file,'utf8').matchAll(/\$\('([^']+)'\)/g))assert.ok(ids.has(match[1]),'Missing DOM element '+match[1]);
 run("start();config.movement='open';config.travel='normal';$('fleetClass').value='fast';send(0,1,.25,0);globalThis.fastTime=fleets[0].duration;fleets=[];$('fleetClass').value='heavy';send(0,1,.25,0)");assert.ok(run('fleets[0].duration>fastTime'));
 console.log('DOM wiring and fleet speed checks passed');
 // Exercise rendering and all scripts with a WebGL API double, without a browser.
@@ -58,3 +58,25 @@ vm.runInContext("$('levelNumber').value='4';$('difficulty').value='expert';start
 run("$('levelNumber').value='17';$('difficulty').value='medium';start();globalThis.retryMap=JSON.stringify(nodes);$('restartLevel').onclick()");assert.equal(run('JSON.stringify(nodes)'),run('retryMap'));
 run("ended=true;campaignResult='Defeat';globalThis.beforeLevel=config.level;$('nextLevel').onclick()");assert.equal(run('config.level'),run('beforeLevel'));
 console.log('Rendering code paths, retry reproducibility and defeat progression checks passed');
+
+vm.runInContext(fs.readFileSync(__dirname+'/playability.js','utf8'),ctx);
+el('progression').value='guided';el('levelNumber').value='1';run('start()');
+assert.equal(run('nodes.length'),6);assert.equal(run("nodes.slice(2).every(p=>p.kind==='colony')"),true);
+assert.equal(el('upgrade').hidden,true);assert.equal(el('research').hidden,true);
+run('nodes[2].owner=0;activatePlanet(0);activatePlanet(2)');assert.equal(run('selected'),2);assert.equal(run('fleets.length'),0);
+run('activatePlanet(2)');assert.equal(run('selected'),-1);
+run('activatePlanet(0);activatePlanet(-1)');assert.equal(run('selected'),-1);
+run('activatePlanet(0);targeting=true;activatePlanet(2)');assert.equal(run('fleets.length'),1);assert.equal(run('selected'),0);assert.equal(run('targeting'),false);
+run('activatePlanet(2);activatePlanet(3)');assert.equal(run('selected'),2);assert.equal(run('fleets.length'),2);
+run('activatePlanet(-1);activatePlanet(3)');assert.equal(run('selected'),3);assert.equal(run('fleets.length'),2);
+for(const [level,kind] of [[3,'colony'],[4,'industrial'],[6,'fortress'],[8,'relay']]){el('levelNumber').value=String(level);run('start()');assert.equal(run('nodes[2].kind'),kind);assert.equal(el('upgrade').hidden,level<3)}
+for(let level=1;level<=20;level++){el('levelNumber').value=String(level);run('start()');assert.equal(run("nodes.filter(p=>p.kind==='relay').length>0"),level>=8);assert.equal(run("nodes.filter(p=>p.kind==='fortress').length>0"),level>=6)}
+run('restore(JSON.parse(JSON.stringify(snapshot())))');assert.equal(run('targeting'),false);
+el('progression').value='custom';el('environment').value='hazards';run('start()');assert.equal(run('config.environment'),'hazards');assert.equal(el('research').hidden,false);
+console.log('Selection, deselection, reinforcement targeting and guided unlock regressions passed');
+
+for(const kind of ['capital','colony','industrial','fortress','relay']){let svg=run(`planetGlyph('${kind}')`);assert.ok(svg.includes('aria-label="'+kind+'"'));}
+const glyphs=['capital','colony','industrial','fortress','relay'].map(k=>run(`planetGlyph('${k}')`));assert.equal(new Set(glyphs).size,5);
+run("$('progression').value='guided';$('levelNumber').value='1';start();selected=0;globalThis.constBefore=nodes[0].ships");
+run("$('upgrade').onclick()");assert.equal(run('nodes[0].ships'),run('constBefore'));
+console.log('Planet visual identity and locked-action checks passed');
