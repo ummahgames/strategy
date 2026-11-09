@@ -12,10 +12,7 @@ tick=function(dt){
   systemsTick(dt);
   if(config.environment==='hazards')for(const f of fleets){let p=fleetPosition(f);if(Math.abs(p.x)<.13&&Math.abs(p.y)<.45){f.hazard=(f.hazard||0)+dt*.5;let loss=Math.floor(f.hazard);f.ships=Math.max(0,f.ships-loss);f.hazard-=loss}}
   fleets=fleets.filter(f=>f.ships>0);
-  if(config.interception==='on'&&config.travel!=='instant'){
-    for(let i=0;i<fleets.length;i++)for(let j=i+1;j<fleets.length;j++){let a=fleets[i],b=fleets[j];if(a.owner===b.owner||a.ships<=0||b.ships<=0)continue;let p=fleetPosition(a),q=fleetPosition(b);if(Math.hypot(p.x-q.x,p.y-q.y)<.045){let loss=Math.min(a.ships,b.ships);a.ships-=loss;b.ships-=loss}}
-    fleets=fleets.filter(f=>f.ships>0);
-  }
+
 };
 $('research').onclick=()=>{let p=nodes[selected];if(!p||p.owner!==0||p.ships<30){notice('Select a friendly planet with 30 ships.');return}if(tech[0]>=5){notice('Engine research complete.');return}p.ships-=30;tech[0]++;notice(`Engine technology ${tech[0]} / 5.`)};
 $('scan').onclick=()=>{let p=nodes[selected];if(!p||p.owner!==0||p.ships<10){notice('Select a friendly planet with 10 ships.');return}p.ships-=10;nodes.forEach(p=>p.explored=true);notice('Galaxy chart updated.')};

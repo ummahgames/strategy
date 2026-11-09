@@ -88,11 +88,11 @@ for(const progression of ['guided','custom'])for(const preset of ['classic','flo
  run("$('restartLevel').onclick()");assert.equal(run('config.deployment'),preset==='flow'?'flow':'manual');
  run('globalThis.oldSave=JSON.parse(JSON.stringify(snapshot()));oldSave.config.objective="survival";restore(oldSave)');assert.equal(run('config.objective'),'conquest');assert.equal(el('preset').value,preset);
 }
-assert.deepEqual(Array.from(run("Object.values(Campaign.difficulties).map(d=>d.reaction)")),[6,3.5,2,.8]);
+assert.deepEqual(Array.from(run("Object.values(Campaign.difficulties).map(d=>d.reaction)")),[60,12,2,.8]);
 // Existing flow routes retain their accumulated dispatch clock when the AI keeps its target.
 run("$('preset').value='flow';$('progression').value='custom';$('difficulty').value='expert';$('levelNumber').value='1';start();nodes[1].ships=100;elapsed=30;ai();globalThis.aiRoute=routes.find(r=>r.a===1);aiRoute.clock=.8;ai()");assert.equal(run('routes.find(r=>r.a===1)===aiRoute'),true);assert.equal(run('aiRoute.clock'),.8);
 console.log('Preset, conquest, difficulty and persistent AI route checks passed');
-for(const [difficulty,before,after] of [['easy',5.9,6.1],['medium',3.4,3.6],['hard',1.9,2.1],['expert',.7,.9]]){
+for(const [difficulty,before,after] of [['easy',59.9,60.1],['medium',11.9,12.1],['hard',1.9,2.1],['expert',.7,.9]]){
  el('preset').value='classic';el('progression').value='custom';el('difficulty').value=difficulty;el('levelNumber').value='1';el('scenario').value='skirmish';el('production').value='continuous';el('movement').value='open';run('start()');
  run("nodes.forEach(p=>{p.rate=0;if(p.owner===2)p.ships=200});nodes[1].ships=100;nodes[2].ships=0;elapsed=30;aiClock=0");
  for(let t=0;t<Math.floor(before*20);t++)run('tick(.05)');assert.equal(run('fleets.filter(f=>f.owner===1).length'),0,`${difficulty} acted early`);
@@ -135,3 +135,44 @@ let portions=Array.from(run('fleets.filter(f=>f.a===0).map(f=>f.ships)'));assert
 let overlay=renderEl('routeOverlay'),markup=overlay.innerHTML,writes=0;Object.defineProperty(overlay,'innerHTML',{configurable:true,get(){return markup},set(v){writes++;markup=v}});vm.runInContext('render();render()',graphicsContext);assert.equal(writes,0);
 el('importLevelCode').value='not a level code';el('applyLevelCode').onclick();assert.match(el('levelCodeFeedback').textContent,/Invalid level code/);
 console.log('Split flow fairness, overlay caching and level-code feedback checks passed');
+
+// Seeded levels stay spread out, symmetric, connected and reproducible.
+for(const difficulty of ['easy','medium','hard','expert'])for(let n=1;n<=120;n++){
+ el('difficulty').value=difficulty;el('levelNumber').value=String(n);el('preset').value='classic';el('progression').value='guided';run('start()');
+ assert.ok(run('Math.max(...nodes.map(p=>p.y))-Math.min(...nodes.map(p=>p.y))')>.3,`level ${n} is too linear`);
+ assert.equal(run('nodes.slice(2).every((p,i)=>i%2||Math.abs(p.x+nodes[i+3].x)<1e-9&&Math.abs(p.y+nodes[i+3].y)<1e-9)'),true);
+}
+for(const [difficulty,ships,factor] of [['easy',20,.55],['medium',28,.75],['hard',35,.9],['expert',40,1]]){
+ el('difficulty').value=difficulty;el('levelNumber').value='1';el('progression').value='guided';run('start()');assert.equal(run('nodes[1].ships'),ships);assert.equal(run('config.enemyProductionFactor'),factor);
+ run('nodes[1].progress=0;nodes[1].rate=1;nodes[1].ships=0;tick(10)');assert.equal(run('nodes[1].ships'),Math.floor(factor*10));
+}
+// Direct collision tests include high-speed swept intersections and near misses.
+run("start();config.travel='normal';nodes[0].x=-1;nodes[0].y=0;nodes[1].x=1;nodes[1].y=0;fleets=[{a:0,b:1,owner:0,ships:30,t:0,duration:1},{a:1,b:0,owner:1,ships:20,t:0,duration:1}];resolveFleetCollisions(1)");assert.equal(run('fleets.length'),1);assert.equal(run('fleets[0].ships'),10);assert.equal(run('fleets[0].owner'),0);
+run("fleets=[{a:0,b:1,owner:0,ships:10,t:0,duration:1},{a:1,b:0,owner:1,ships:10,t:0,duration:1}];resolveFleetCollisions(1)");assert.equal(run('fleets.length'),0);
+run("nodes[2].x=-1;nodes[2].y=.2;nodes[3].x=1;nodes[3].y=.2;fleets=[{a:0,b:1,owner:0,ships:10,t:0,duration:1},{a:3,b:2,owner:1,ships:10,t:0,duration:1}];resolveFleetCollisions(1)");assert.equal(run('fleets.length'),2);
+run("fleets=[{a:0,b:1,owner:0,ships:10,t:0,duration:1},{a:1,b:0,owner:0,ships:10,t:0,duration:1}];resolveFleetCollisions(1)");assert.equal(run('fleets.length'),2);
+run("nodes[2].x=0;nodes[2].y=-1;nodes[3].x=0;nodes[3].y=1;fleets=[{a:0,b:1,owner:0,ships:10,t:0,duration:1},{a:2,b:3,owner:1,ships:8,t:0,duration:1}];resolveFleetCollisions(1)");assert.equal(run('fleets.length'),1);assert.equal(run('fleets[0].ships'),2);
+// A collision just before arrival resolves before either fleet attacks a planet.
+run("start();config.travel='fast';nodes[0].ships=0;nodes[1].ships=0;fleets=[{a:0,b:1,owner:0,ships:10,t:0,duration:.01},{a:1,b:0,owner:1,ships:10,t:0,duration:.01}];tick(.05)");assert.equal(run('fleets.length'),0);assert.equal(run('nodes[0].owner'),0);assert.equal(run('nodes[1].owner'),1);
+console.log('Spread maps, difficulty handicaps, swept fleet clashes and arrival ordering passed');
+
+// Opposing fleets do not fight merely because their paths cross at different times.
+run("start();nodes[0].x=-1;nodes[0].y=0;nodes[1].x=1;nodes[1].y=0;nodes[2].x=0;nodes[2].y=-1;nodes[3].x=0;nodes[3].y=1;fleets=[{a:0,b:1,owner:0,ships:10,t:0,duration:1},{a:2,b:3,owner:1,ships:8,t:.7,duration:1}];resolveFleetCollisions(.2)");assert.equal(run('fleets.length'),2);
+// The collision rule applies even to older configurations with interception disabled.
+run("start();config.interception='off';config.travel='fast';nodes[0].ships=0;nodes[1].ships=0;fleets=[{a:0,b:1,owner:0,ships:10,t:0,duration:.01},{a:1,b:0,owner:1,ships:10,t:0,duration:.01}];tick(.05)");assert.equal(run('fleets.length'),0);
+assert.equal(run('config.generatorVersion'),3);
+console.log('Different-time crossings and always-on collision checks passed');
+
+// Easy makes varied choices across level seeds, including mistakes; retry remains reproducible.
+let easyTargets=new Set(),easyMistakes=0;
+for(let level=1;level<=100;level++){
+ el('preset').value='flow';el('progression').value='custom';el('difficulty').value='easy';el('levelNumber').value=String(level);el('scenario').value='skirmish';el('movement').value='open';run('start();nodes[1].ships=100;nodes.forEach((p,i)=>{if(p.owner!==1)p.ships=i===2?0:100});elapsed=100;ai()');
+ assert.equal(run('fleets.filter(f=>f.owner===1).length'),1);assert.equal(run('routes.filter(r=>r.owner===1).length'),0);let target=run('fleets.find(f=>f.owner===1).b');easyTargets.add(target);if(target!==2)easyMistakes++;
+ run('start();nodes[1].ships=100;nodes.forEach((p,i)=>{if(p.owner!==1)p.ships=i===2?0:100});elapsed=100;ai()');assert.equal(run('fleets.find(f=>f.owner===1).b'),target);
+}
+assert.ok(easyTargets.size>2);assert.ok(easyMistakes>0);
+// Medium chooses the weak target when the full map is visible and sends only one fleet.
+el('difficulty').value='medium';el('fog').value='off';el('levelNumber').value='5';run('start();nodes[1].ships=100;nodes.forEach((p,i)=>{if(p.owner!==1)p.ships=i===2?0:100});elapsed=100;ai()');assert.equal(run('fleets.filter(f=>f.owner===1).length'),1);assert.equal(run('fleets.find(f=>f.owner===1).b'),2);assert.equal(run('routes.filter(r=>r.owner===1).length'),0);
+// Existing random state is part of the match state, so restoration continues the same sequence.
+run('globalThis.aiSave=JSON.parse(JSON.stringify(snapshot()));globalThis.nextRandom=aiRandom();restore(aiSave)');assert.equal(run('aiRandom()'),run('nextRandom'));
+console.log('Random Easy decisions, reproducible retry, simple Medium decisions and AI state checks passed');

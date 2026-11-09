@@ -17,11 +17,11 @@ start=function(){let result=playableStart();if(result===false)return false;point
   const n=BigInt(config.level),allowed=n<4n?['colony']:n<6n?['colony','industrial']:n<8n?['colony','industrial','fortress']:['colony','industrial','fortress','relay'];
   // Deterministic pair assignment guarantees the new type appears in its introduction.
   for(let i=2;i<nodes.length;i+=2){let kind=allowed[((i-2)/2)%allowed.length];if(i===2)kind=allowed.at(-1);nodes[i].kind=nodes[i+1].kind=kind}
-  config.scenario='skirmish';config.objective='conquest';config.production='continuous';config.movement='open';config.economy='ships';config.fog='off';config.combat='instant';config.environment='none';config.interception='off';config.travel='normal';config.routePolicy='reserves';config.deployment=$('preset').value==='flow'?'flow':'manual';
+  config.scenario='skirmish';config.objective='conquest';config.production='continuous';config.movement='open';config.economy='ships';config.fog='off';config.combat='instant';config.environment='none';config.interception='on';config.travel='normal';config.routePolicy='reserves';config.deployment=$('preset').value==='flow'?'flow':'manual';
   // Scenario modifications from custom setup must not leak into a guided level.
   nodes.forEach(p=>{if(p.capital){p.ships=40;p.rate=1.5}else p.rate=1});
   $('fleetClass').value='basic';$('exactCount').value='0';$('amount').value='50';$('amountLabel').textContent='50%';
-}applyLearningUI();updatePanel();return true};
+}const balance={easy:{ships:.5,production:.55},medium:{ships:.7,production:.75},hard:{ships:.875,production:.9},expert:{ships:1,production:1}}[config.difficulty]||{ships:1,production:1};nodes[1].ships=Math.round(nodes[1].ships*balance.ships);config.enemyProductionFactor=balance.production;config.interception='on';applyLearningUI();updatePanel();return true};
 function applyLearningUI(){let guided=config.progression==='guided',n=BigInt(config.level||'1');const unlocks={upgrade:3,clearRoutes:5,fortify:6,ability:7,research:9,scan:10,queue:10,redirect:10,groupSend:10};
   for(const [id,level] of Object.entries(unlocks)){$(id).hidden=guided&&n<BigInt(level)}
   for(const [id,level] of [['fleetClass',6],['exactCount',3],['reserve',5],['groupSources',10],['fleetSelect',10]]){const element=$(id);element.disabled=guided&&n<BigInt(level);if(element.parentElement)element.parentElement.hidden=guided&&n<BigInt(level)}
