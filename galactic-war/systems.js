@@ -8,11 +8,8 @@ function fleetPosition(f){let a=f.origin||nodes[f.a],b=nodes[f.b];return {x:a.x+
 const systemsTick=tick;
 tick=function(dt){
   if(ended)return;
-  const savedReserves=new Map(routes.map(r=>[r,r.reserve]));
-  if(config.routePolicy==='production')routes.forEach(r=>r.reserve=Math.max(r.reserve||0,nodes[r.a].ships));
   if(config.routePolicy==='waves')routes.forEach(r=>{if((r.waveClock=(r.waveClock||0)+dt)<5)r.clock=-1;else{r.clock=1;r.waveClock=0}});
   systemsTick(dt);
-  routes.forEach(r=>{if(config.routePolicy==='production'&&savedReserves.has(r))r.reserve=savedReserves.get(r)});
   if(config.environment==='hazards')for(const f of fleets){let p=fleetPosition(f);if(Math.abs(p.x)<.13&&Math.abs(p.y)<.45){f.hazard=(f.hazard||0)+dt*.5;let loss=Math.floor(f.hazard);f.ships=Math.max(0,f.ships-loss);f.hazard-=loss}}
   fleets=fleets.filter(f=>f.ships>0);
   if(config.interception==='on'&&config.travel!=='instant'){
@@ -33,6 +30,7 @@ render=function(){systemsRender();if(!gl||config.environment!=='hazards')return;
 const validatedRestore=restore;
 restore=function(input){
   const data=JSON.parse(JSON.stringify(input));
+  if(data?.config){data.config.objective='conquest';if(data.config.deployment==='hybrid')data.config.deployment='manual'}
   const finite=(n,min=0,max=1e12)=>typeof n==='number'&&Number.isFinite(n)&&n>=min&&n<=max;
   if(!data||!data.config||!Array.isArray(data.nodes)||!finite(data.elapsed)||!finite(data.aiClock)||!Number.isInteger(data.selected)||data.selected< -1||data.selected>=data.nodes.length)throw Error('Invalid match header');
   const choices={production:['continuous','batch','queue'],deployment:['manual','flow','hybrid'],movement:['open','range','network'],objective:['capital','conquest','timed','survival'],economy:['ships','energy','local'],combat:['instant','attrition'],fog:['off','on','explored'],travel:['normal','fast','instant']};
@@ -48,11 +46,9 @@ restore=function(input){
 const exactSend=send;
 send=function(a,b,fraction,owner){const exact=Number($('exactCount').value);if(owner===0&&exact>0&&nodes[a]?.ships>0)fraction=Math.min(1,Math.floor(exact)/nodes[a].ships);return exactSend(a,b,fraction,owner)};
 $('fullscreen').onclick=()=>{if(document.fullscreenElement)document.exitFullscreen();else document.documentElement.requestFullscreen?.().catch(()=>notice('Full screen is unavailable.'))};
-const preferenceKeys=['production','deployment','movement','difficulty','objective','types','economy','fog','combat','travel','capacity','scenario','environment','interception','routePolicy','graphics','motion'];
-$('favoriteSave').onclick=()=>{try{localStorage.setItem('galactic-war-preferences',JSON.stringify(Object.fromEntries(preferenceKeys.map(key=>[key,$(key).value]))));notice('Setup preferences saved.')}catch(e){notice('Device storage unavailable.')}};
-$('favoriteLoad').onclick=()=>{try{const data=JSON.parse(localStorage.getItem('galactic-war-preferences'));if(!data)throw Error();for(const key of preferenceKeys)if(typeof data[key]==='string')$(key).value=data[key];notice('Preferences loaded. Start a new match to apply rules.')}catch(e){notice('No saved preferences found.')}};
+const preferenceKeys=['preset','progression','production','deployment','movement','difficulty','types','economy','fog','combat','travel','capacity','scenario','environment','interception','routePolicy','graphics','motion'];
 const syncRestore=restore;
-restore=function(data){syncRestore(data);for(const key of preferenceKeys)if(config[key]!==undefined)$(key).value=String(config[key])};
+restore=function(data){syncRestore(data);$('preset').value=config.deployment==='flow'?'flow':'classic';for(const key of preferenceKeys)if(config[key]!==undefined)$(key).value=String(config[key])};
 const systemsOrder=order;
-order=function(a,b,drag){if(ended)return;if(config.deployment==='flow'||config.deployment==='hybrid'&&drag){let visited=new Set(),queue=[b];while(queue.length){let at=queue.shift();if(at===a){notice('This route would create a reinforcement loop.');return}if(visited.has(at))continue;visited.add(at);for(const r of routes)if(r.a===at&&r.owner===0)queue.push(r.b)}}return systemsOrder(a,b,drag)};
+order=function(a,b,drag){if(ended)return;if((config.deployment==='flow'||config.deployment==='hybrid'&&drag)&&!routes.some(r=>r.a===a&&r.b===b&&r.owner===0)){let visited=new Set(),queue=[b];while(queue.length){let at=queue.shift();if(at===a){notice('This route would create a reinforcement loop.');return}if(visited.has(at))continue;visited.add(at);for(const r of routes)if(r.a===at&&r.owner===0)queue.push(r.b)}}return systemsOrder(a,b,drag)};
 for(const key of ['upgrade','fortify','ability','queue','research','scan','redirect','groupSend','clearRoutes']){const handler=$(key).onclick;$(key).onclick=function(...args){if(ended){notice('Match complete. Retry or advance to the next level.');return}return handler.apply(this,args)}}

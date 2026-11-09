@@ -1,7 +1,7 @@
 'use strict';
 // Versioned deterministic campaign. Level IDs remain decimal strings, never floats.
 const Campaign = (() => {
-  const difficulties = {easy:{reaction:4,reserve:16,commit:.6},medium:{reaction:2.5,reserve:12,commit:.7},hard:{reaction:1.5,reserve:10,commit:.8},expert:{reaction:.8,reserve:8,commit:.85}};
+  const difficulties = {easy:{reaction:6,reserve:20,commit:.55,maxOrders:1},medium:{reaction:3.5,reserve:15,commit:.65,maxOrders:2},hard:{reaction:2,reserve:12,commit:.75,maxOrders:3},expert:{reaction:.8,reserve:8,commit:.85,maxOrders:Infinity}};
   function level(value){if(!/^[1-9][0-9]*$/.test(String(value)))throw Error('Level must be a positive whole number.');return String(value)}
   function seed(value,salt=0){let n=2166136261;for(const ch of level(value)+':'+salt)n=Math.imul(n^ch.charCodeAt(0),16777619)>>>0;return n}
   function specification(value,difficulty){value=level(value);if(!difficulties[difficulty])throw Error('Unknown difficulty');let n=BigInt(value),phase=Number((n-1n)%12n),tier=Math.min(8,Number((n-1n)/12n>8n?8n:(n-1n)/12n));return {level:value,seed:seed(value),phase,tier,count:n===1n?6:n===2n?8:n===3n?10:n<8n?12:n<16n?18:18+6*(phase%2),strength:1+tier*.025}}
@@ -13,6 +13,7 @@ const originalStart=start;
 start=function(){
   let level;
   try{level=Campaign.level($('levelNumber').value||'1')}catch(e){notice(e.message);return false}
+  $('deployment').value=$('preset').value==='flow'?'flow':'manual';
   let difficulty=$('difficulty').value==='normal'?'medium':$('difficulty').value;
   if(!Campaign.difficulties[difficulty])difficulty='medium';
   const spec=Campaign.specification(level,difficulty);
@@ -48,7 +49,7 @@ restore=function(data){if(data.config?.level)Campaign.level(data.config.level);i
 
 // Difficulty changes decisions rather than hidden production bonuses.
 ai=function(){const settings=Campaign.difficulties[config.difficulty]||Campaign.difficulties.medium;
-  for(let i=0;i<nodes.length;i++){const p=nodes[i];if(p.owner!==1)continue;
+  let orders=0;for(let i=0;i<nodes.length;i++){const p=nodes[i];if(p.owner!==1||orders>=settings.maxOrders)continue;
     const danger=fleets.filter(f=>f.b===i&&f.owner===0).reduce((n,f)=>n+f.ships,0);
     if((config.progression!=='guided'||BigInt(config.level)>=7n)&&danger>p.ships&&p.ships>=15&&p.shield<=0&&config.difficulty!=='easy'){p.ships-=15;p.shield=20}
     if((config.progression!=='guided'||BigInt(config.level)>=3n)&&config.difficulty==='expert'&&p.ships>70&&p.level<4){p.ships-=20;p.rate+=.5;p.level++}
@@ -58,7 +59,7 @@ ai=function(){const settings=Campaign.difficulties[config.difficulty]||Campaign.
     const estimate=t=>visible(t)?t.q.ships:20;
     targets.sort((a,b)=>(estimate(a)+a.d*12-a.q.rate*5)-(estimate(b)+b.d*12-b.q.rate*5));
     let t=targets[0];let amount=Math.floor(p.ships*settings.commit);
-    if(t&&amount>estimate(t)+t.d*t.q.rate*8){if(config.deployment==='flow'||config.deployment==='hybrid'){routes=routes.filter(r=>r.a!==i);routes.push({a:i,b:t.j,owner:1,clock:0,reserve:settings.reserve})}else send(i,t.j,settings.commit,1)}
-    else if(config.difficulty!=='easy'){let front=nodes.map((q,j)=>({q,j})).filter(t=>t.q.owner===1&&t.j!==i&&canSend(i,t.j)).sort((a,b)=>Math.abs(a.q.x+.78)-Math.abs(b.q.x+.78))[0];if(front&&front.q.x<p.x)send(i,front.j,.5,1)}
+    if(t&&amount>estimate(t)+t.d*t.q.rate*8){if(config.deployment==='flow'||config.deployment==='hybrid'){let current=routes.find(r=>r.a===i&&r.owner===1);if(!current||current.b!==t.j){routes=routes.filter(r=>r.a!==i);p.flowProductionCheckpoint=p.produced||0;routes.push({a:i,b:t.j,owner:1,clock:0,reserve:settings.reserve});orders++}}else if(send(i,t.j,settings.commit,1))orders++}
+    else if(config.difficulty!=='easy'){let front=nodes.map((q,j)=>({q,j})).filter(t=>t.q.owner===1&&t.j!==i&&canSend(i,t.j)).sort((a,b)=>Math.abs(a.q.x+.78)-Math.abs(b.q.x+.78))[0];if(front&&front.q.x<p.x&&send(i,front.j,.5,1))orders++}
   }
 };
