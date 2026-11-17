@@ -2,7 +2,7 @@
 
 Tactics, defense, expeditions, resource choices, and team planning.
 
-**15 games.** Each folder contains a complete standalone browser game.
+**17 games.** Each folder contains a complete standalone browser game.
 
 | Game | Folder | Public route |
 | --- | --- | --- |
@@ -18,9 +18,11 @@ Tactics, defense, expeditions, resource choices, and team planning.
 | [Oasis Council](oasis-council/index.html) | [oasis-council/](oasis-council/README.md) | /strategy/oasis-council/ |
 | [One Small Island](one-small-island/index.html) | [one-small-island/](one-small-island/README.md) | /strategy/one-small-island/ |
 | [Orchard Guardians](orchard-guardians/index.html) | [orchard-guardians/](orchard-guardians/README.md) | /strategy/orchard-guardians/ |
+| [Starhaven](starhaven/index.html) | [starhaven/](starhaven/README.md) | /strategy/starhaven/ |
 | [The Moving Castle](the-moving-castle/index.html) | [the-moving-castle/](the-moving-castle/README.md) | /strategy/the-moving-castle/ |
 | [The Neighborhood Feast](the-neighborhood-feast/index.html) | [the-neighborhood-feast/](the-neighborhood-feast/README.md) | /strategy/the-neighborhood-feast/ |
 | [Tiny Siege Workshop](tiny-siege-workshop/index.html) | [tiny-siege-workshop/](tiny-siege-workshop/README.md) | /strategy/tiny-siege-workshop/ |
+| [Toroid Tic-Tac-Toe](toroid-tic-tac-toe/index.html) | [toroid-tic-tac-toe/](toroid-tic-tac-toe/README.md) | /strategy/toroid-tic-tac-toe/ |
 
 ## Hosting
 
